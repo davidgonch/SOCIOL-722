@@ -5,9 +5,14 @@ format: html
 execute: 
   echo: true
   warning: false
+  message: false
 ---
 
 ```{r}
+#| echo: false
+#| message: false
+#| warning: false
+
 library(tidyverse)
 library(gapminder)
 library(tinytable)
@@ -124,7 +129,7 @@ data |>
 
 ```
 
-# Time Plot (Line)
+## Time Plot (Line)
 
 Time plot showing number of cumulative books per year for the top 10 publishers.
 
