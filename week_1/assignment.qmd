@@ -1,0 +1,149 @@
+---
+title: "SOCIOL 722 - Week 1 Assignment"
+format: html
+
+execute: 
+  echo: true
+  warning: false
+---
+
+```{r}
+library(tidyverse)
+library(gapminder)
+library(tinytable)
+library(knitr)
+library(kableExtra)
+library(lubridate)
+
+theme_set(theme_light())
+
+here::here()
+
+data <- read_csv("books.csv")
+
+```
+
+# Dataset
+
+The dataset is from Goodreads, a book review website. The source is: https://www.kaggle.com/datasets/jealousleopard/goodreadsbooks
+
+# Univariate Plots
+
+## Density Plot
+
+Density plot of average book ratings.
+
+```{r}
+ggplot(data,
+       aes(x = average_rating)) +
+    geom_density()
+```
+
+## Histogram
+
+Histogram of average book ratings.
+
+```{r}
+                 
+ggplot(data,
+       aes(x = average_rating)) +
+  geom_histogram(binwidth = 1,
+                 boundary = 0,
+                 color = "white")
+
+```
+
+## Bar Graph
+
+Bar graph of publication year.
+
+```{r}
+
+past_20_years <- data |> 
+  mutate(publication_year = year(mdy(publication_date))) |> 
+  filter(publication_year > 2004)
+
+
+ggplot(past_20_years,
+       aes(x = publication_year)) +
+  geom_bar()
+
+```
+
+# Bivariate Plots
+
+## Scatterplot
+
+Scatterplot for number of pages and average rating of top 100 books (by rating count).
+
+```{r}
+top_100_books <- data |> 
+  top_n(n=100, wt = ratings_count) 
+  
+
+ggplot(top_100_books,
+       aes(x = num_pages,
+           y = average_rating)) +
+  geom_point()
+```
+
+## Bar Graph
+
+Bar graph of book count for the top 10 publishers.
+
+```{r}
+top_10_publishers <- data |> 
+  group_by(publisher) |> 
+  tally() |> 
+  rename("book_count" = "n") |> 
+  top_n(n = 10, wt = book_count)
+
+
+ggplot(top_10_publishers,
+       aes(x = publisher,
+           y = book_count)) +
+  geom_bar(stat = "identity") +
+  scale_x_discrete(labels = function(publisher) str_wrap(publisher, width = 10))
+```
+
+## Strip Plot
+
+Strip plot showing average rating for top 100 books published in the past 20 years.
+
+```{r}
+
+data |>
+  mutate(publication_year = year(mdy(publication_date))) |> 
+  filter(publication_year > 2004) |>
+  top_n(n = 100, wt = ratings_count) |> 
+  ggplot(aes(x = publication_year,
+           y = average_rating)) +
+  geom_jitter(height = .1,
+              width = .1, 
+              alpha = .2)
+
+```
+
+# Time Plot (Line)
+
+Time plot showing number of cumulative books per year for the top 10 publishers.
+
+```{r}
+
+data_with_publication_year <- data |> 
+  mutate(publication_year = year(mdy(publication_date)))
+
+top_10_publisher_books <- data_with_publication_year |> 
+  group_by(publisher) |> 
+  arrange(mdy(publication_date)) |> 
+  mutate(id = row_number()) |> 
+  filter(publisher %in% top_10_publishers$publisher)
+
+top_10_publisher_books |> 
+  rename("book_count" = "id") |> 
+  ggplot(aes(x = publication_year,
+             y = book_count,
+             color = publisher)) +
+  geom_line()
+
+```
