@@ -1,0 +1,72 @@
+---
+title: "Week 2 - Homework"
+format: html
+
+author: "David Gonzalez Chavez"
+
+execute:
+  echo: true
+  warning: false
+  message: false
+  freeze: auto
+---
+
+```{r}
+#| echo: false
+#| message: false
+#| warning: false
+
+library(tidyverse)
+library(tinytable)
+
+theme_set(theme_light())
+
+```
+
+# Creating the population.
+
+The following code creates the working population: an imaginary town where 150K people live. Of the 150k people, 120k prefer dogs to cats. This represents a population parameter of 80% for preferring dogs.
+
+```{r}
+
+population <- tibble(id = 1:150000) |>  # initialize with 150K rows
+  mutate(prefers_dogs = if_else(id <= 120000, 1L, 0L))  # first 120k individuals prefer dogs (1)
+
+population |> 
+  summarize(mean = mean(prefers_dogs)) # sanity check to confirm that 80% of people prefer dogs
+
+```
+
+# Drawing the sample.
+
+The following code first draws 3 sets of 2500 samples of varying sample sizes from the population: 500, 1000, and 2500. It then draws a plot comparing the sample means of each different group. The result is a density plot demonstrating that each increasing sample size results in a tighter concentration of sample means, indicating a smaller IQR (and therefore greater precision).
+
+```{r}
+
+set.seed(12345)
+
+create_sample <- function(samp_size = 1000, samp_quantity = 2500) { # default n = 1000
+  tibble(1:samp_quantity) |> # create a tibble with all the samples
+    rowwise() |> # treat each row independently
+    mutate(sample_mean = (
+             slice_sample(population, n = samp_size, replace = FALSE) |> # take a sample from the population with the sample size being provided in the function call
+               summarize(sample_mean = mean(prefers_dogs)) |>  # take an average of prefers_dogs
+               as.double()
+    )) |> 
+    mutate(sample_size_group = paste(samp_size, " Sample Size")) # label the sample size group
+}
+
+samples_500 <- create_sample(samp_size = 500, samp_quantity = 2500) # create a tibble with 2500 samples of size 500 each
+samples_1000 <- create_sample(samp_size = 1000, samp_quantity = 2500) # create a tibble with 2500 samples of size 1000 each
+samples_2500 <- create_sample(samp_size = 2500, samp_quantity = 2500) # create a tibble with 2500 samples of size 2500 each
+
+
+combined_df <- bind_rows(samples_500, samples_1000, samples_2500) # combine all tibbles to create a plot
+
+ggplot(combined_df,
+       aes(x = sample_mean, # the X is individual sample means (i.e., 2500 different points per sample size group)
+              color = sample_size_group)) + # identify each by their sample size group label
+  geom_density() # draw a density plot
+
+
+```

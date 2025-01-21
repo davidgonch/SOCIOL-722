@@ -1,0 +1,38 @@
+---
+title: "Week 2 - In Class Work"
+format: html
+
+author: "David Gonzalez Chavez"
+
+execute:
+  echo: true
+  warning: false
+  message: false
+  freeze: auto
+
+---
+
+```{r}
+#| echo: false
+#| message: false
+#| warning: false
+
+library(tidyverse)
+library(gapminder)
+library(tinytable)
+library(knitr)
+library(kableExtra)
+library(lubridate)
+
+theme_set(theme_light())
+
+here::here()
+
+```
+
+```{r}
+
+population <- tibble(id = 1:1e5) |>  # initialize with 100K rows
+  mutate(parent = if_else(id <= 70000, "Yes", "No")) # first 70k are "yes"
+
+```
