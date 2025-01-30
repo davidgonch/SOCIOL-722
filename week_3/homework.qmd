@@ -1,0 +1,235 @@
+---
+title: "Week 3 - Homework"
+format: html
+
+author: "David Gonzalez Chavez"
+
+execute:
+  echo: true
+  warning: false
+  message: false
+  freeze: auto
+---
+
+```{r}
+#| echo: false
+#| message: false
+#| warning: false
+
+library(tidyverse)
+library(tinytable)
+library(gssr)
+library(scales)
+
+theme_set(theme_light())
+
+```
+
+# Dataset 1 - GSS
+
+The first dataset comes from the GSS. It includes results from two variables:
+
+```{r}
+
+gss2022 <- gss_get_yr(year = 2022) |> # get 2022 GSS data
+  haven::zap_labels()                 # remove Stata value labels
+
+```
+
+```{r}
+d <- gss2022 |> 
+  select(sex, wksexism) |> # select the sex and wksexism variables
+  drop_na() |> # drop any rows with N/A values
+  mutate(respondent_sex = if_else(sex == 1, "Male", "Female"),
+         experiences_workplace_sexism = if_else(wksexism == 1, "Yes", "No")) |> 
+  select(respondent_sex, experiences_workplace_sexism)
+  
+```
+
+## Contingency table
+
+```{r}
+
+contingency_table <- d |>
+  group_by(respondent_sex, experiences_workplace_sexism) |> 
+  tally() |> 
+  pivot_wider(names_from = respondent_sex, values_from = n) # display the tallied amounts for individuals with different combinations of the variables
+
+tt(contingency_table)
+```
+
+```{r}
+#| echo: false
+
+female_yes = sum(d$respondent_sex == "Female" & d$experiences_workplace_sexism == "Yes", na.rm = TRUE) # all respondents who are female and experienced sexism
+female_no = sum(d$respondent_sex == "Female" & d$experiences_workplace_sexism == "No", na.rm = TRUE)# all respondents who are female and did not experience sexism
+male_yes = sum(d$respondent_sex == "Male" & d$experiences_workplace_sexism == "Yes", na.rm = TRUE) # all respondents who are male and experienced sexism
+male_no = sum(d$respondent_sex == "Male" & d$experiences_workplace_sexism == "No", na.rm = TRUE) # all respondents who are female and did not experience sexism
+
+all_female = female_yes + female_no
+all_male = male_yes + male_no
+all_sexism = female_yes + male_yes
+all_no_sexism = female_no + male_no
+all_people = all_female + all_male
+
+```
+
+## Marginal Probability
+
+Marginal probability refers to the probability of an event tied to one variable without regard for another.
+
+The following are the marginal probabilities for this dataset:
+
+```{r}
+#| echo: false
+
+paste("Marginal Probability of Being Male:", percent(all_male / all_people))
+paste("Marginal Probability of Being Female:", percent(all_female / all_people))
+paste("Marginal Probability of Experiencing Workplace Sexism:", percent(all_sexism / all_people))
+paste("Marginal Probability of Not Experiencing Workplace Sexism:", percent(all_no_sexism / all_people))
+
+
+```
+
+Overall, this shows an equal likelihood of being male or female. People are also very likely to not experience workplace sexism.
+
+## Joint Probability
+
+Joint probability refers to the probability of two events happening at the same time.
+
+The following are the joint probabilities for this dataset:
+
+```{r}
+#| echo: false
+
+paste("Marginal Probability of Being Male and Experiencing Workplace Sexism:", percent(male_yes / all_people))
+paste("Marginal Probability of Being Male and Not Experiencing Workplace Sexism:", percent(male_no / all_people))
+paste("Marginal Probability of Being Female and Experiencing Workplace Sexism:", percent(female_yes / all_people))
+paste("Marginal Probability of Being Female and Not Experiencing Workplace Sexism:", percent(female_no / all_people))
+
+
+```
+
+These probabilities are the chance of selecting an individual with both listed characteristics from the population. It does not refer to the chance of a person fitting one criteria given another, which is instead covered in the next section.
+
+## Conditional Probability
+
+Conditional probability refers to the probability of one event happening given another.
+
+The following are the conditional probabilities for this dataset:
+
+```{r}
+#| echo: false
+
+paste("Conditional Probability of Experiencing Workplace Sexism Given Being Male:", percent(male_yes / all_male))
+paste("Conditional Probability of Not Experiencing Workplace Sexism Given Being Male:", percent(male_no / all_male))
+paste("Conditional Probability of Experiencing Workplace Sexism Given Being Female:", percent(female_yes / all_female))
+paste("Conditional Probability of Not Experiencing Workplace Sexism Given Being Female:", percent(female_no / all_female))
+
+
+```
+
+The conditional probabilities being different based on being male or being female suggests that gender and experiencing workplace sexism are not independent. Women appear to be more likely to experience workplace sexism than men.
+
+# Dataset 2 - Road Accident Survival
+
+The following dataset contains "detailed records of simulated road accident data, focusing on factors influencing survival outcomes." It comes from: https://www.kaggle.com/datasets/himelsarder/road-accident-survival-dataset
+
+```{r}
+#| echo: false
+
+accident = read_csv("accident.csv") |> 
+  select(Seatbelt_Used, Survived) |> 
+  drop_na() |> 
+  mutate(Survived = if_else(Survived == 1, "Yes", "No"))
+
+glimpse(accident)
+
+
+```
+
+## Contingency table
+
+```{r}
+
+contingency_table_2 <- accident |>
+  group_by(Seatbelt_Used, Survived) |> 
+  tally() |> 
+  pivot_wider(names_from = Seatbelt_Used, values_from = n) # display the tallied amounts for individuals with different combinations of the variables
+
+tt(contingency_table_2)
+```
+
+```{r}
+#| echo: false
+
+seatbelt_survived = sum(accident$Seatbelt_Used == "Yes" & accident$Survived == "Yes", na.rm = TRUE) # all individuals who used seatbelt and survived
+seatbelt_died = sum(accident$Seatbelt_Used == "Yes" & accident$Survived == "No", na.rm = TRUE) # all individuals who used seatbelt and died
+no_seatbelt_survived = sum(accident$Seatbelt_Used == "No" & accident$Survived == "Yes", na.rm = TRUE) # all individuals who didn't use a seatbelt and survived
+no_seatbelt_died = sum(accident$Seatbelt_Used == "No" & accident$Survived == "No", na.rm = TRUE) # all individuals who didn't use a seatbelt and died
+
+all_seatbelt = seatbelt_survived + seatbelt_died
+all_no_seatbelt = no_seatbelt_survived + no_seatbelt_died
+all_survived = seatbelt_survived + no_seatbelt_survived
+all_died = seatbelt_died + no_seatbelt_died
+
+all_accidents = seatbelt_survived + seatbelt_died + no_seatbelt_survived + no_seatbelt_died
+
+```
+
+## Marginal Probability
+
+Marginal probability refers to the probability of an event tied to one variable without regard for another.
+
+The following are the marginal probabilities for this dataset:
+
+```{r}
+#| echo: false
+
+paste("Marginal Probability of Using Seatbelt During Accident:", percent(all_seatbelt / all_accidents))
+paste("Marginal Probability of Not Using Seatbelt During Accident:", percent(all_no_seatbelt / all_accidents))
+paste("Marginal Probability of Surviving Accident:", percent(all_survived / all_accidents))
+paste("Marginal Probability of Not Surviving Accident:", percent(all_died / all_accidents))
+
+
+```
+
+Overall, this shows a higher likelihood of using a seatbelt during an accident. It also shows an equal likelihood of surviving an accident or not.
+
+## Joint Probability
+
+Joint probability refers to the probability of two events happening at the same time.
+
+The following are the joint probabilities for this dataset:
+
+```{r}
+#| echo: false
+
+paste("Marginal Probability of Using Seatbelt and Surviving:", percent(seatbelt_survived / all_accidents))
+paste("Marginal Probability of Using Seatbelt and Dieing:", percent(seatbelt_died / all_accidents))
+paste("Marginal Probability of Not Using Seatbelt and Surviving:", percent(no_seatbelt_survived / all_accidents))
+paste("Marginal Probability of Not Using Seatbelt and Dieing:", percent(no_seatbelt_died / all_accidents))
+
+
+```
+
+These probabilities are the chance of selecting an individual with both listed characteristics from the population. It does not refer to the chance of a person fitting one criteria given another, which is instead covered in the next section.
+
+## Conditional Probability
+
+Conditional probability refers to the probability of one event happening given another.
+
+The following are the conditional probabilities for this dataset:
+
+```{r}
+#| echo: false
+
+paste("Conditional Probability of Surviving Given Using a Seatbelt:", percent(seatbelt_survived / all_seatbelt))
+paste("Conditional Probability of Dieing Given Using a Seatbelt:", percent(seatbelt_died / all_seatbelt))
+paste("Conditional Probability of Surviving Given Not Using a Seatbelt:", percent(no_seatbelt_survived / all_no_seatbelt))
+paste("Conditional Probability of Dieing Given Not Using a Seatbelt:", percent(no_seatbelt_died / all_no_seatbelt))
+
+
+```
+
+The conditional probabilities being different based on using a seatbelt or not suggests that using a seatbelt and surviving an accident are not independent. The results suggest that wearing a seatbelt increases the likelihood of surviving an accident.
