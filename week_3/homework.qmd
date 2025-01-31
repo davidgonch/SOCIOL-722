@@ -1,6 +1,9 @@
 ---
 title: "Week 3 - Homework"
-format: html
+format: 
+  html:
+    embed-resources: true
+editor: visual
 
 author: "David Gonzalez Chavez"
 
@@ -40,8 +43,8 @@ gss2022 <- gss_get_yr(year = 2022) |> # get 2022 GSS data
 d <- gss2022 |> 
   select(sex, wksexism) |> # select the sex and wksexism variables
   drop_na() |> # drop any rows with N/A values
-  mutate(respondent_sex = if_else(sex == 1, "Male", "Female"),
-         experiences_workplace_sexism = if_else(wksexism == 1, "Yes", "No")) |> 
+  mutate(respondent_sex = if_else(sex == 1, "Male", "Female"), # label sex
+         experiences_workplace_sexism = if_else(wksexism == 1, "Yes", "No")) |> # label experiencing sexism
   select(respondent_sex, experiences_workplace_sexism)
   
 ```
@@ -142,8 +145,6 @@ accident = read_csv("accident.csv") |>
   select(Seatbelt_Used, Survived) |> 
   drop_na() |> 
   mutate(Survived = if_else(Survived == 1, "Yes", "No"))
-
-glimpse(accident)
 
 
 ```

@@ -1,0 +1,32 @@
+---
+title: "Week 3 In-Class"
+format: html
+
+author: "David Gonzalez Chavez"
+
+execute: 
+  echo: true
+  warning: false
+  message: false
+  freeze: auto
+---
+
+```{r}
+#| echo: false
+
+library(gssr)
+library(tidyverse)
+
+```
+
+```{r}
+d <- gss2022 |> 
+  select(wordsum,
+         age,
+         educ,
+         marital) |> 
+  drop_na()
+
+```
+
+test the result of 2+2 is `{r} 2+2`
