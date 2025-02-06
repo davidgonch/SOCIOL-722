@@ -1,0 +1,178 @@
+---
+title: "Week 3 - Homework"
+format: 
+  html:
+    embed-resources: true
+editor: visual
+
+author: "David Gonzalez Chavez"
+
+execute:
+  echo: true
+  warning: false
+  message: false
+  freeze: auto
+---
+
+```{r}
+#| echo: false
+#| message: false
+#| warning: false
+
+library(tidyverse)
+library(gssr)
+
+theme_set(theme_light())
+
+```
+
+# Data
+
+The data for this homework assignment comes from the 2022 GSS.
+
+```{r}
+
+gss2022 <- gss_get_yr(year = 2022) |> # get 2022 GSS data
+  haven::zap_labels()                 # remove labels
+
+```
+
+# Variable #1:
+
+The first variable from the 2022 GSS which I will use in this assignment is "number of hours worked last week." The options range from 0 to 89.
+
+```{r}
+
+hrs_data <- gss2022 |> 
+  select(hrs1) |> # select the hrs1 variable
+  drop_na() # drop any rows with N/A values
+  
+```
+
+## Mean and SD
+
+The mean for this variable is `{r} round(mean(hrs_data$hrs1))`. The standard deviation for this variable is `{r} round(sd(hrs_data$hrs1))`. This indicates that within the sample, one can expect (assuming a normal distribution) that the majority of individuals will work between `{r} round(mean(hrs_data$hrs1)) - round(sd(hrs_data$hrs1))` and `{r} round(mean(hrs_data$hrs1)) + round(sd(hrs_data$hrs1))` hours a week, and the vast majority will work between `{r} round(mean(hrs_data$hrs1)) - (round(sd(hrs_data$hrs1))*2)` and `{r} round(mean(hrs_data$hrs1)) + (round(sd(hrs_data$hrs1))*2)` hours a week.
+
+## Histogram
+
+The following is a histogram showing the distribution of hours worked per week in the sample, alongside a superimposed probability density plot showing a normal distribution with the same mean and standard deviation as our sample.
+
+```{r}
+
+ggplot(hrs_data,
+       aes(x = hrs1)) +
+  geom_histogram(color = "white",
+                 binwidth = 8) + # set bin width to 8, typical work day
+  xlab("Hours Worked per Week") +
+  ylab("Number of Individuals")
+  
+```
+
+## Probability Distribution
+
+The following is a histogram showing the distribution of hours worked per week in the sample, alongside a superimposed probability density plot showing a normal distribution with the same mean and standard deviation as our sample.
+
+```{r}
+
+ggplot(hrs_data,
+       aes(x = hrs1)) +
+  geom_histogram(aes(y = ..density..), # make y equal to density so the plots have the same scale
+                 color = "white",
+                 binwidth = 8) + # set bin width to 8, typical work day
+   stat_function(fun = dnorm, # overlay dnorm function (gets probability density)
+                args = list(mean = mean(hrs_data$hrs1), # mean of our sample
+                            sd = sd(hrs_data$hrs1))) + #sd of our sample
+  xlab("Hours Worked per Week") +
+  ylab("Density")
+  
+
+```
+
+The plot above demonstrates that our sample has a roughly normal distribution for hours worked per week, with the majority of people concentrated around the mean and a consistent drop-off on either side. The normal distribution is not perfectly accurate for representing these data, however:
+
+-   The normal distribution drastically underestimates the number of people working around 40 hours per week.
+-   The normal distribution doesn't reflect that people are more likely to work less than the mean versus more than the mean.
+
+# Variable #2:
+
+The second variable from the 2022 GSS which I will use in this assignment is "age of respondent." The options range from 18 to 89+.
+
+```{r}
+
+age_data <- gss2022 |> 
+  select(age) |> # select the age variable
+  drop_na() # drop any rows with N/A values
+  
+```
+
+## Mean and SD
+
+The mean for this variable is `{r} round(mean(age_data$age))`. The standard deviation for this variable is `{r} round(sd(age_data$age))`. This indicates that within the sample, one can expect (assuming a normal distribution) that the majority of individuals will be between `{r} round(mean(age_data$age)) - round(sd(age_data$age))` and `{r} round(mean(age_data$age)) + round(sd(age_data$age))` years of age, and the vast majority will be between `{r} round(mean(age_data$age)) - (round(sd(age_data$age))*2)` (i.e., 18 since this is the minimum in our dataset) and `{r} round(mean(age_data$age)) + (round(sd(age_data$age))*2)` years of age.
+
+## Histogram
+
+The following is a histogram showing the distribution of hours worked per week in the sample, alongside a superimposed probability density plot showing a normal distribution with the same mean and standard deviation as our sample.
+
+```{r}
+
+ggplot(age_data,
+       aes(x = age)) +
+  geom_histogram(color = "white",
+                 binwidth = 4) + # set bin width to 4
+  xlab("Age") +
+  ylab("Number of Individuals")
+  
+```
+
+## Probability Distribution
+
+The following is a histogram showing the distribution of ages in the sample, alongside a superimposed probability density plot showing a normal distribution with the same mean and standard deviation as our sample.
+
+```{r}
+
+ggplot(age_data,
+       aes(x = age)) +
+  geom_histogram(aes(y = ..density..), # make y equal to density so the plots have the same scale
+                 color = "white",
+                 binwidth = 8) + # set bin width to 4
+   stat_function(fun = dnorm, # overlay dnorm function (gets probability density)
+                args = list(mean = mean(age_data$age), # mean of our sample
+                            sd = sd(age_data$age))) + #sd of our sample
+  xlab("Age") +
+  ylab("Density")
+  
+
+```
+
+The plot above demonstrates that our sample does not map to a normal distribution effectively. The following are issues with the representation of our data from the normal distribution:
+
+-   The normal distribution will have values above 89 or below 18, both of which are not possible in our dataset (89+ are combined to 89).
+-   There are actually more people in the age ranges just below the mean and above the mean, with the density dropping for the age range which covers the mean. This indicates a bimodal distribution, whereas the normal distribution is unimodal.
+
+# Formulas
+
+This homework assignment used both the mean and standard deviation. The following are the formulas for those calculations.
+
+## Mean
+
+The formula for calculating the mean of a sample ($\bar{x}$) is:
+
+$$
+  \bar{x} = \frac{\sum_{i=1}^{n} x_i}{n} 
+$$
+
+## Standard Deviation
+
+The formula for calculating the standard deviation $s$ of a sample is:
+
+$$
+  s = \sqrt{s^2}
+$$
+
+Here, $s^2$ represents the variance which is calculated by the following formula:
+
+### Variance
+
+$$
+  \frac{\sum_{i=1}^{n}(x_i-\bar{x})^2}{n-1} 
+$$
