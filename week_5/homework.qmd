@@ -1,0 +1,136 @@
+---
+title: "Week 5 - Homework"
+format: 
+  html:
+    embed-resources: true
+editor: visual
+
+author: "David Gonzalez Chavez"
+
+execute:
+  echo: true
+  warning: false
+  message: false
+  freeze: auto
+---
+
+```{r}
+#| echo: false
+#| message: false
+#| warning: false
+
+library(tidyverse)
+library(gssr)
+
+theme_set(theme_light())
+
+```
+
+# Data
+
+The data for this homework assignment comes from the 2022 GSS.
+
+```{r}
+
+gss2022 <- gss_get_yr(year = 2022) |> # get 2022 GSS data
+  haven::zap_labels()                 # remove labels
+
+```
+
+# Variable #1:
+
+The first variable I am using from the 2022 GSS is the number of hours per day respondents have to relax (hrsrelax). It is a continuous variable.
+
+```{r}
+
+hrs_data <- gss2022 |> 
+  select(hrsrelax) |> # select the hrsrelax variable
+  drop_na() # drop any rows with N/A values
+  
+```
+
+## Histogram
+
+For reference, below is a histogram showing the distribution of "hrsrelax"
+
+```{r}
+
+ggplot(hrs_data,
+       aes(x = hrsrelax)) +
+  geom_histogram(color = "white",
+                 binwidth = 2, # set bin width to 2, ensures a reasonable number of bins
+                 boundary = 0) + 
+  xlab("Number of Hours to Relax per Day") +
+  ylab("Number of Individuals")
+  
+```
+
+## Mean, SD, and Confidence Intervals
+
+```{r}
+
+ci_89_hrs = qt(p=0.5+(.89/2), df = nrow(hrs_data) - 1) # get the number of SDs above/below to get confidence interval. p is the desired percentile (50% - half of the desired percentile, which I can + or - to the mean to get my desired CI)
+
+ci_95_hrs = qt(p=0.5+(.95/2), df = nrow(hrs_data) - 1)
+
+ci_99_hrs = qt(p=0.5+(.99/2), df = nrow(hrs_data) - 1)
+
+```
+
+The mean for this variable is `{r} round(mean(hrs_data$hrsrelax))`. The standard deviation for this variable is `{r} round(sd(hrs_data$hrsrelax))`. An 89% confidence interval is between `{r} mean(hrs_data$hrsrelax) - (sd(hrs_data$hrsrelax) * ci_89_hrs)` and `{r} mean(hrs_data$hrsrelax) + (sd(hrs_data$hrsrelax) * ci_89_hrs)`. A 95% confidence interval is between `{r} mean(hrs_data$hrsrelax) - (sd(hrs_data$hrsrelax) * ci_95_hrs)` and `{r} mean(hrs_data$hrsrelax) + (sd(hrs_data$hrsrelax) * ci_95_hrs)`. A 99% confidence interval is between `{r} mean(hrs_data$hrsrelax) - (sd(hrs_data$hrsrelax) * ci_99_hrs)` and `{r} mean(hrs_data$hrsrelax) + (sd(hrs_data$hrsrelax) * ci_99_hrs)`.
+
+It is not accurate to say that we are 89/95/99% certain that the correct value is in those ranges. Instead, (copied verbatim from slides), "if we did the same study infinite times, \[89/95/99\]% of the computed intervals would contain the true value."
+
+# Variable #2:
+
+The first variable I am using from the 2022 GSS is respondent's confidence in the existence of god (god), which I make binary by setting those who believe with no doubts to 1 and all others to 0 in my constructed variable "confident_believer."
+
+```{r}
+
+god_data <- gss2022 |> 
+  select(god) |> # select the god variable
+  drop_na() |> # drop any rows with N/A values
+  mutate(confident_believer = if_else(god == 6, 1, 0)) |> # anyone who responded they believe with no doubts is a confident believer, all others are not
+  select(confident_believer)
+  
+  
+```
+
+## Bar Chart
+
+For reference, below is a histogram showing the distribution of "confident_believer." Please note it's almost 50/50.
+
+```{r}
+
+bar_chart_data = god_data |>
+  mutate(Is_Confident_Believer = if_else(confident_believer == 1, "Yes", "No"))
+
+ggplot(bar_chart_data,
+       aes(x = Is_Confident_Believer)) +
+  geom_bar() + 
+  xlab("Confident Belief in God") +
+  ylab("Number of Individuals")
+  
+```
+
+## Mean, SD, and Confidence Intervals
+
+```{r}
+
+mean_god = mean(god_data$confident_believer) # mean for a bernoulli distribution is the probability of 1, which we can just calculate with the mean formula
+
+variance_god = mean_god * (1 - mean_god) # variance is p(1-p)
+
+sd_god = variance_god^(1/2) # sd is sqrt of variance
+
+ci_89_god = qt(p=0.5+(.89/2), df = nrow(god_data) - 1) # get the number of SDs above/below to get confidence interval. p is the desired percentile (50% - half of the desired percentile, which I can + or - to the mean to get my desired CI)
+
+ci_95_god = qt(p=0.5+(.95/2), df = nrow(god_data) - 1)
+
+ci_99_god = qt(p=0.5+(.99/2), df = nrow(god_data) - 1)
+
+```
+
+The mean for this variable is `{r} round(mean_god, 2)` and the standard deviation for this variable is `{r} round(sd_god, 2)`. An 89% confidence interval is between `{r} mean_god - (sd_god * ci_89_god)` and `{r} mean_god + (sd_god * ci_89_god)`. A 95% confidence interval is between `{r} mean_god - (sd_god * ci_95_god)` and `{r} mean_god + (sd_god * ci_95_god)`. A 99% confidence interval is between `{r} mean_god - (sd_god * ci_99_god)` and `{r} mean_god + (sd_god * ci_99_god)`.
+
+It is not accurate to say that we are 89/95/99% certain that the correct value is in those ranges. Instead, (copied verbatim from slides), "if we did the same study infinite times, \[89/95/99\]% of the computed intervals would contain the true value." Either way, this is not very helpful since the range is so big and contains impossible values (i.e., below 0 and above 1).
