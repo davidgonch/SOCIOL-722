@@ -69,15 +69,21 @@ ggplot(hrs_data,
 
 ```{r}
 
-ci_89_hrs = qt(p=0.5+(.89/2), df = nrow(hrs_data) - 1) # get the number of SDs above/below to get confidence interval. p is the desired percentile (50% - half of the desired percentile, which I can + or - to the mean to get my desired CI)
+ci_89_hrs = qt(p=0.5+(.89/2), df = nrow(hrs_data) - 1) # get the number of SDs above/below to get confidence interval. p is the desired percentile (50% - half of the desired percentile, which I can + or - to the mean to get my desired CI). qt uses nrow to calculate SE.
 
 ci_95_hrs = qt(p=0.5+(.95/2), df = nrow(hrs_data) - 1)
 
 ci_99_hrs = qt(p=0.5+(.99/2), df = nrow(hrs_data) - 1)
 
+mean_hrs = mean(hrs_data$hrsrelax)
+
+sd_hrs = sd(hrs_data$hrsrelax)
+
+se_hrs = sd_hrs / (nrow(hrs_data) ^ .5) # se is sd / sqrt(n)
+
 ```
 
-The mean for this variable is `{r} round(mean(hrs_data$hrsrelax))`. The standard deviation for this variable is `{r} round(sd(hrs_data$hrsrelax))`. An 89% confidence interval is between `{r} mean(hrs_data$hrsrelax) - (sd(hrs_data$hrsrelax) * ci_89_hrs)` and `{r} mean(hrs_data$hrsrelax) + (sd(hrs_data$hrsrelax) * ci_89_hrs)`. A 95% confidence interval is between `{r} mean(hrs_data$hrsrelax) - (sd(hrs_data$hrsrelax) * ci_95_hrs)` and `{r} mean(hrs_data$hrsrelax) + (sd(hrs_data$hrsrelax) * ci_95_hrs)`. A 99% confidence interval is between `{r} mean(hrs_data$hrsrelax) - (sd(hrs_data$hrsrelax) * ci_99_hrs)` and `{r} mean(hrs_data$hrsrelax) + (sd(hrs_data$hrsrelax) * ci_99_hrs)`.
+The mean for this variable is `{r} round(mean_hrs,2)`. The standard deviation for this variable is `{r} round(sd_hrs,2)`. An 89% confidence interval is between `{r} round(mean_hrs - (se_hrs * ci_89_hrs),2)` and `{r} round(mean_hrs + (se_hrs * ci_89_hrs),2)`. A 95% confidence interval is between `{r} round(mean_hrs - (se_hrs * ci_95_hrs),2)` and `{r} round(mean_hrs + (se_hrs * ci_95_hrs),2)`. A 99% confidence interval is between `{r} round(mean_hrs - (se_hrs * ci_99_hrs),2)` and `{r} round(mean_hrs + (se_hrs * ci_99_hrs),2)`.
 
 It is not accurate to say that we are 89/95/99% certain that the correct value is in those ranges. Instead, (copied verbatim from slides), "if we did the same study infinite times, \[89/95/99\]% of the computed intervals would contain the true value."
 
@@ -123,7 +129,9 @@ variance_god = mean_god * (1 - mean_god) # variance is p(1-p)
 
 sd_god = variance_god^(1/2) # sd is sqrt of variance
 
-ci_89_god = qt(p=0.5+(.89/2), df = nrow(god_data) - 1) # get the number of SDs above/below to get confidence interval. p is the desired percentile (50% - half of the desired percentile, which I can + or - to the mean to get my desired CI)
+se_god = sd_god / (nrow(god_data) ^ 0.5)
+
+ci_89_god = qt(p=0.5+(.89/2), df = nrow(god_data) - 1) # get the number of SDs above/below to get confidence interval. p is the desired percentile (50% - half of the desired percentile, which I can + or - to the mean to get my desired CI). qt uses nrow to calculate SE.
 
 ci_95_god = qt(p=0.5+(.95/2), df = nrow(god_data) - 1)
 
@@ -131,6 +139,108 @@ ci_99_god = qt(p=0.5+(.99/2), df = nrow(god_data) - 1)
 
 ```
 
-The mean for this variable is `{r} round(mean_god, 2)` and the standard deviation for this variable is `{r} round(sd_god, 2)`. An 89% confidence interval is between `{r} mean_god - (sd_god * ci_89_god)` and `{r} mean_god + (sd_god * ci_89_god)`. A 95% confidence interval is between `{r} mean_god - (sd_god * ci_95_god)` and `{r} mean_god + (sd_god * ci_95_god)`. A 99% confidence interval is between `{r} mean_god - (sd_god * ci_99_god)` and `{r} mean_god + (sd_god * ci_99_god)`.
+The mean for this variable is `{r} round(mean_god, 2)` and the standard deviation for this variable is `{r} round(sd_god, 2)`. An 89% confidence interval is between `{r} round(mean_god - (se_god * ci_89_god),2)` and `{r} round(mean_god + (se_god * ci_89_god),2)`. A 95% confidence interval is between `{r} round(mean_god - (se_god * ci_95_god),2)` and `{r} round(mean_god + (se_god * ci_95_god),2)`. A 99% confidence interval is between `{r} round(mean_god - (se_god * ci_99_god),2)` and `{r} round(mean_god + (se_god * ci_99_god),2)`.
 
-It is not accurate to say that we are 89/95/99% certain that the correct value is in those ranges. Instead, (copied verbatim from slides), "if we did the same study infinite times, \[89/95/99\]% of the computed intervals would contain the true value." Either way, this is not very helpful since the range is so big and contains impossible values (i.e., below 0 and above 1).
+It is not accurate to say that we are 89/95/99% certain that the correct value is in those ranges. Instead, (copied verbatim from slides), "if we did the same study infinite times, \[89/95/99\]% of the computed intervals would contain the true value."
+
+# Simulations
+
+The following simulations demonstrate that simulation-based standard deviations of the estimate converge to the formula based standard error of the sampling distribution.
+
+These simulations will use \~ a 95% confidence interval (2 SDs above and below the mean).
+
+## Binary Variable
+
+The following code creates a population of 100k individuals and assigns 65% of them to the category "dog lover." It then draws 10,000 samples of size 1,000 each and calculates a \~95.44% confidence interval for each (using standard error, 2 SEs above/below mean) and summarizes the number of samples where the true population parameter (65%) fell within that sample's confidence interval.
+
+```{r}
+
+population_dog <- tibble(id = 1:1e5) |> #create table with 100k rows
+  mutate(dog_lover = if_else(id<=65000, 1, 0)) |> # first 65k people are dog lovers
+  ungroup() # required for some reason
+
+assess_sample_dog <- function(n = 1000) { #default sample size of 1000
+  sample = slice_sample(population_dog, n = n) # take a sample from population of size n
+  se = sd(sample$dog_lover) / (n^.5) # standard error is sd / sqrt(n)
+  between(.65, mean(sample$dog_lover) - (se*2), mean(sample$dog_lover) + (se*2)) # is true value within CI
+}
+
+samples_dog <- tibble(id = 1:1e4) |> #run 10k samples
+  rowwise() |> # treat each row independently
+  mutate(trueValue_within_CI = assess_sample_dog(n=1000)) |> # assess whether the sample's CI had the true mean
+  mutate(trueValue_1_0 = if_else(trueValue_within_CI == TRUE, 1, 0))# set to 1 if the true value is in the CI
+
+ggplot(samples_dog,
+       aes(x = trueValue_within_CI)) +
+  geom_bar() + 
+  xlab("Sample Contains True Value Within Confidence Interval") +
+  ylab("Number of Samples")
+```
+
+Overall, `{r} round(mean(samples_dog$trueValue_1_0),4)*100`% of the samples had the true mean (65%) within their calculated confidence interval based on 2 standard errors. This is very close to our 95.44% estimate. The idea that we can expect 95.44% of confidence intervals calculated using 2 SEs above and below the mean for different samples will contain the true mean of the population is displayed below using these data:
+
+```{r}
+
+plot_table <- samples_dog |>
+  ungroup() |> # required to let me do cumulative mean, had to google this
+  mutate(cm = cummean(trueValue_1_0)) # get the cumulative mean, i.e. the cumulative percentage of samples with the true mean in the CI
+
+ggplot(plot_table,
+       aes(x = id,
+           y = cm)) + # y is the cumulative mean, i.e. what percent of samples at that point had the mean in their CI
+  geom_line(color = "black") +
+  geom_hline(yintercept = .9544,
+             line_type = "dotted") +
+  xlab("Sample Number") +
+  ylab("Cumulative Percentage with True Mean in CI")
+
+```
+
+## Continuous
+
+The following code creates a population of 10k individuals and assigns them a random age between 0 and 100. It then draws 500 samples of size 1000 and calculates a \~95.44% confidence interval for each (using standard error, 2 SEs above/below mean) and summarizes the number of samples where the true population mean fell within that sample's confidence interval.
+
+```{r}
+
+population_age <- tibble(id = 1:1e5) |> #create table with 10k rows
+  rowwise() |> # treat each row independently
+  mutate(age = runif(1, 0, 100)) |> # random age 1 to 100
+  ungroup()
+
+assess_sample_age <- function(n = 1000) { #default sample size of 500
+  sample = slice_sample(population_age, n = n) # take a sample from population of size n
+  se = sd(sample$age) / (n^.5) # standard error is sd / sqrt(n)
+  between(mean(population_age$age), mean(sample$age) - (se*2), mean(sample$age) + (se*2)) # is true value within CI
+}
+
+samples_age <- tibble(id = 1:10000) |> #run 10000 samples
+  ungroup() |> # required for some reason
+  rowwise() |> # treat each row independently
+  mutate(trueValue_within_CI = assess_sample_age(n=1000)) |> # assess whether the sample's CI had the true mean
+  mutate(trueValue_1_0 = if_else(trueValue_within_CI == TRUE, 1, 0))# set to 1 if the true value is in the CI
+
+ggplot(samples_age,
+       aes(x = trueValue_within_CI)) +
+  geom_bar() + 
+  xlab("Sample Contains True Value Within Confidence Interval") +
+  ylab("Number of Samples")
+```
+
+Overall, `{r} round(mean(samples_age$trueValue_1_0),4)*100`% of the samples had the true mean (`{r} mean(population_age$age)`) within their calculated confidence interval based on 2 standard errors. This is very close to our 95.44% estimate. The idea that we can expect 95.44% of confidence intervals calculated using 2 SEs above and below the mean for different samples will contain the true mean of the population is displayed below using these data:
+
+```{r}
+
+plot_table <- samples_age |>
+  ungroup() |> # required to let me do cumulative mean, had to google this
+  mutate(cm = cummean(trueValue_1_0)) # get the cumulative mean, i.e. the cumulative percentage of samples with the true mean in the CI
+
+ggplot(plot_table,
+       aes(x = id,
+           y = cm)) + # y is the cumulative mean, i.e. what percent of samples at that point had the mean in their CI
+  geom_line(color = "black") +
+  geom_hline(yintercept = .9544,
+             line_type = "dotted") +
+  xlab("Sample Number") +
+  ylab("Cumulative Percentage with True Mean in CI")
+
+```
