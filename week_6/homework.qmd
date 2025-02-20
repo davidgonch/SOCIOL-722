@@ -138,6 +138,22 @@ This converts to a p-value of `{r} pvalue_biden` using a two-tailed test.
 
 Because the p-value is less than our alpha of `{r} alpha_biden` we can reject the null hypothesis. Therefore, our evidence suggests that our sample was not drawn from a sampling frame where the mean was `{r} null_biden`. As a result, our hypothesis test suggests that Biden will win the 2020 election.
 
+## Confidence Interval
+
+```{r}
+
+t_score_biden = qt(p=alpha_biden/2, df=nrow(biden) - 1,lower.tail=F) # t-score is used to calculate conf. int. 
+
+margin_error_biden = t_score_biden * se_biden # margin of error is t-score * standard error
+
+lower_bound_biden = mean_biden - margin_error_biden
+
+high_bound_biden = mean_biden + margin_error_biden
+
+```
+
+A corresponding confidence interval would be one with `{r} (1-alpha_biden)*100`% confidence, which in this case would be from `{r} round(lower_bound_biden,2)` to `{r} round(high_bound_biden,2)`. Because the null value of `{r} null_biden` is not in this range, we can reject the null hypothesis. This is another way to approach the question.
+
 # Hypothesis Test #2: Respondent Sex
 
 The second hypothesis test comes from the "sex" variable which is based on the sex of the respondent. I will construct a variable "woman" which is whether or not a respondent is a woman.
@@ -227,6 +243,22 @@ This converts to a p-value of `{r} round(pvalue_woman,4)` using a two-tailed tes
 
 Because the p-value is less than our alpha of `{r} alpha_woman` we can reject the null hypothesis. Therefore, our evidence suggests that our sample was not drawn from a sampling frame where the mean was `{r} null_woman`. As a result, our hypothesis test suggests that our population has more women than men.
 
+## Confidence Interval
+
+```{r}
+
+t_score_woman = qt(p=alpha_woman/2, df=nrow(woman) - 1,lower.tail=F) # t-score is used to calculate conf. int. 
+
+margin_error_woman = t_score_woman * se_woman # margin of error is t-score * standard error
+
+lower_bound_woman = mean_woman - margin_error_woman
+
+high_bound_woman = mean_woman + margin_error_woman
+
+```
+
+A corresponding confidence interval would be one with `{r} (1-alpha_woman)*100`% confidence, which in this case would be from `{r} round(lower_bound_woman,2)` to `{r} round(high_bound_woman,2)`. Because the null value of `{r} null_woman` is not in this range, we can reject the null hypothesis. This is another way to approach the question.
+
 
 # Hypothesis Test #3: Hours Worked
 
@@ -313,6 +345,24 @@ This converts to a p-value of `{r} round(pvalue_work,4)` using a two-tailed test
 
 Because the p-value is greater than our alpha of `{r} alpha_work` we fail to reject the null hypothesis. Therefore, our evidence suggests that our sample was  drawn from a sampling frame where the mean was `{r} null_work`. As a result, our hypothesis test suggests that (on average) in our population, people do not work more/less than 40 hrs per week.
 
+
+## Confidence Interval
+
+```{r}
+
+t_score_work = qt(p=alpha_work/2, df=nrow(work) - 1,lower.tail=F) # t-score is used to calculate conf. int. 
+
+margin_error_work = t_score_work * se_work # margin of error is t-score * standard error
+
+lower_bound_work = mean_work - margin_error_work
+
+high_bound_work = mean_work + margin_error_work
+
+```
+
+A corresponding confidence interval would be one with `{r} (1-alpha_work)*100`% confidence, which in this case would be from `{r} round(lower_bound_work,2)` to `{r} round(high_bound_work,2)`. Because the null value of `{r} null_work` is in this range, we cannot reject the null hypothesis. This is another way to approach the question.
+
+
 # Hypothesis Test #4: Height
 
 The fourth hypothesis test comes from the "height" variable which is based on the height (in inches) of the respondent.
@@ -396,3 +446,21 @@ This converts to a p-value of `{r} round(pvalue_rheight,4)` using a two-tailed t
 ## Interpret the p-value
 
 Because the p-value is less than our alpha of `{r} alpha_rheight` we reject the null hypothesis. Therefore, our evidence suggests that our sample was not drawn from a sampling frame where the mean was `{r} null_rheight`. As a result, our hypothesis test suggests that our sample was not drawn from a population where the mean height is the average height of an American.
+
+## Confidence Interval
+
+```{r}
+
+t_score_rheight = qt(p=alpha_rheight/2, df=nrow(rheight) - 1,lower.tail=F) # t-score is used to calculate conf. int. 
+
+margin_error_rheight = t_score_rheight * se_rheight # margin of error is t-score * standard error
+
+lower_bound_rheight = mean_rheight - margin_error_rheight
+
+high_bound_rheight = mean_rheight + margin_error_rheight
+
+```
+
+A corresponding confidence interval would be one with `{r} (1-alpha_rheight)*100`% confidence, which in this case would be from `{r} round(lower_bound_rheight,2)` to `{r} round(high_bound_rheight,2)`. Because the null value of `{r} null_rheight` is not in this range, we can reject the null hypothesis. This is another way to approach the question.
+
+

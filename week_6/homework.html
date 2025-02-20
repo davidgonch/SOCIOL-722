@@ -3200,27 +3200,40 @@ vertical-align: -.125em;
 <h2 class="anchored" data-anchor-id="interpret-the-p-value">Interpret the p-value</h2>
 <p>Because the p-value is less than our alpha of 0.01 we can reject the null hypothesis. Therefore, our evidence suggests that our sample was not drawn from a sampling frame where the mean was 0.5. As a result, our hypothesis test suggests that Biden will win the 2020 election.</p>
 </section>
+<section id="confidence-interval" class="level2">
+<h2 class="anchored" data-anchor-id="confidence-interval">Confidence Interval</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>t_score_biden <span class="ot">=</span> <span class="fu">qt</span>(<span class="at">p=</span>alpha_biden<span class="sc">/</span><span class="dv">2</span>, <span class="at">df=</span><span class="fu">nrow</span>(biden) <span class="sc">-</span> <span class="dv">1</span>,<span class="at">lower.tail=</span>F) <span class="co"># t-score is used to calculate conf. int. </span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>margin_error_biden <span class="ot">=</span> t_score_biden <span class="sc">*</span> se_biden <span class="co"># margin of error is t-score * standard error</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>lower_bound_biden <span class="ot">=</span> mean_biden <span class="sc">-</span> margin_error_biden</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>high_bound_biden <span class="ot">=</span> mean_biden <span class="sc">+</span> margin_error_biden</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>A corresponding confidence interval would be one with 99% confidence, which in this case would be from 0.6 to 0.65. Because the null value of 0.5 is not in this range, we can reject the null hypothesis. This is another way to approach the question.</p>
+</section>
 </section>
 <section id="hypothesis-test-2-respondent-sex" class="level1">
 <h1>Hypothesis Test #2: Respondent Sex</h1>
 <p>The second hypothesis test comes from the “sex” variable which is based on the sex of the respondent. I will construct a variable “woman” which is whether or not a respondent is a woman.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>woman <span class="ot">&lt;-</span> gss2022 <span class="sc">|&gt;</span> </span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(sex) <span class="sc">|&gt;</span> <span class="co"># pick the sex</span></span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">drop_na</span>() <span class="sc">|&gt;</span>  <span class="co">#get rid of n/a values</span></span>
-<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">iswoman =</span> <span class="fu">if_else</span>(sex <span class="sc">==</span> <span class="dv">2</span>, <span class="dv">1</span>, <span class="dv">0</span>)) <span class="sc">|&gt;</span>  <span class="co"># make it binary: woman or not</span></span>
-<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(iswoman) <span class="co"># only interested in my constructed binary variable</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>woman <span class="ot">&lt;-</span> gss2022 <span class="sc">|&gt;</span> </span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(sex) <span class="sc">|&gt;</span> <span class="co"># pick the sex</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">drop_na</span>() <span class="sc">|&gt;</span>  <span class="co">#get rid of n/a values</span></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">iswoman =</span> <span class="fu">if_else</span>(sex <span class="sc">==</span> <span class="dv">2</span>, <span class="dv">1</span>, <span class="dv">0</span>)) <span class="sc">|&gt;</span>  <span class="co"># make it binary: woman or not</span></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(iswoman) <span class="co"># only interested in my constructed binary variable</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>The following is a bar graph showing the results of this variable:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>woman_plot <span class="ot">&lt;-</span> woman <span class="sc">|&gt;</span> </span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">iswoman =</span> <span class="fu">if_else</span>(iswoman <span class="sc">==</span> <span class="dv">1</span>, <span class="st">&quot;Woman&quot;</span>, <span class="st">&quot;Not Woman&quot;</span>))</span>
-<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(woman_plot,</span>
-<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>       <span class="fu">aes</span>(<span class="at">x =</span> iswoman)) <span class="sc">+</span></span>
-<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_bar</span>() <span class="sc">+</span> </span>
-<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">xlab</span>(<span class="st">&quot;Respondent Sex&quot;</span>) <span class="sc">+</span> </span>
-<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ylab</span>(<span class="st">&quot;Count of Respondents&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>woman_plot <span class="ot">&lt;-</span> woman <span class="sc">|&gt;</span> </span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">iswoman =</span> <span class="fu">if_else</span>(iswoman <span class="sc">==</span> <span class="dv">1</span>, <span class="st">&quot;Woman&quot;</span>, <span class="st">&quot;Not Woman&quot;</span>))</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(woman_plot,</span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>       <span class="fu">aes</span>(<span class="at">x =</span> iswoman)) <span class="sc">+</span></span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_bar</span>() <span class="sc">+</span> </span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">xlab</span>(<span class="st">&quot;Respondent Sex&quot;</span>) <span class="sc">+</span> </span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ylab</span>(<span class="st">&quot;Count of Respondents&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
@@ -3232,31 +3245,31 @@ vertical-align: -.125em;
 <section id="alpha-level-1" class="level2">
 <h2 class="anchored" data-anchor-id="alpha-level-1">Alpha Level</h2>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>alpha_woman <span class="ot">=</span> <span class="fl">0.05</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>alpha_woman <span class="ot">=</span> <span class="fl">0.05</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>The alpha level I’m selecting is 0.05. Predicting the exact gender split of our target population is not particularly high-stakes, so I’m comfortable with a 0.05 alpha level.</p>
 </section>
 <section id="calculate-observed-sample-statistics-1" class="level2">
 <h2 class="anchored" data-anchor-id="calculate-observed-sample-statistics-1">Calculate Observed Sample Statistics</h2>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>mean_woman <span class="ot">=</span> <span class="fu">mean</span>(woman<span class="sc">$</span>iswoman)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>mean_woman <span class="ot">=</span> <span class="fu">mean</span>(woman<span class="sc">$</span>iswoman)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>Because this is a binary variable (i.e., woman or not woman), the observed sample statistic is just the proportion that is a woman which is 0.54.</p>
 </section>
 <section id="calculate-the-absolute-difference-between-the-statistic-and-the-expected-value-under-the-null-1" class="level2">
 <h2 class="anchored" data-anchor-id="calculate-the-absolute-difference-between-the-statistic-and-the-expected-value-under-the-null-1">Calculate the Absolute Difference Between the Statistic and the Expected Value Under the Null</h2>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>null_woman <span class="ot">=</span> .<span class="dv">5</span></span>
-<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>absolute_woman <span class="ot">=</span> <span class="fu">abs</span>(mean_woman <span class="sc">-</span> null_woman)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>null_woman <span class="ot">=</span> .<span class="dv">5</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>absolute_woman <span class="ot">=</span> <span class="fu">abs</span>(mean_woman <span class="sc">-</span> null_woman)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>The null value in this scenario would be .5, i.e. 50% of the population are women. The absolute difference between the statistic (0.54) and the expected value under the null (0.5) is 0.04.</p>
 </section>
 <section id="convert-this-difference-into-a-z-score-using-the-se-of-the-sampling-distribution-1" class="level2">
 <h2 class="anchored" data-anchor-id="convert-this-difference-into-a-z-score-using-the-se-of-the-sampling-distribution-1">Convert This Difference Into a Z-score Using the SE of the Sampling Distribution</h2>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>sd_woman <span class="ot">=</span> <span class="fu">sd</span>(woman<span class="sc">$</span>iswoman)</span>
-<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>se_woman <span class="ot">=</span> sd_woman <span class="sc">/</span> <span class="fu">sqrt</span>(<span class="fu">nrow</span>(woman)) <span class="co"># se is sd / sqrt(n)</span></span>
-<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>zscore_woman <span class="ot">=</span> absolute_woman <span class="sc">/</span> se_woman <span class="co"># divide the absolute diff by the SE to get the number of SEs above/below</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>sd_woman <span class="ot">=</span> <span class="fu">sd</span>(woman<span class="sc">$</span>iswoman)</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>se_woman <span class="ot">=</span> sd_woman <span class="sc">/</span> <span class="fu">sqrt</span>(<span class="fu">nrow</span>(woman)) <span class="co"># se is sd / sqrt(n)</span></span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>zscore_woman <span class="ot">=</span> absolute_woman <span class="sc">/</span> se_woman <span class="co"># divide the absolute diff by the SE to get the number of SEs above/below</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>To calculate the z-score, I need to convert the absolute difference to the number of SEs above/below the mean of the null sampling distribution. In this case, the mean of the null sampling distribution is 0.5 and the SE is 0.0078.</p>
 <p>With this information, we know that the difference (in SEs) between the statistic and the expected value under the null is 4.78. This is the z-score.</p>
@@ -3264,7 +3277,7 @@ vertical-align: -.125em;
 <section id="convert-the-z-score-to-a-p-value-1" class="level2">
 <h2 class="anchored" data-anchor-id="convert-the-z-score-to-a-p-value-1">Convert the z-score to a p-value</h2>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>pvalue_woman <span class="ot">=</span> (<span class="dv">1</span> <span class="sc">-</span> <span class="fu">pnorm</span>(zscore_woman)) <span class="sc">*</span> <span class="dv">2</span> <span class="co"># x2 for low/high tails</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>pvalue_woman <span class="ot">=</span> (<span class="dv">1</span> <span class="sc">-</span> <span class="fu">pnorm</span>(zscore_woman)) <span class="sc">*</span> <span class="dv">2</span> <span class="co"># x2 for low/high tails</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>This converts to a p-value of 0 using a two-tailed test.</p>
 </section>
@@ -3272,24 +3285,37 @@ vertical-align: -.125em;
 <h2 class="anchored" data-anchor-id="interpret-the-p-value-1">Interpret the p-value</h2>
 <p>Because the p-value is less than our alpha of 0.05 we can reject the null hypothesis. Therefore, our evidence suggests that our sample was not drawn from a sampling frame where the mean was 0.5. As a result, our hypothesis test suggests that our population has more women than men.</p>
 </section>
+<section id="confidence-interval-1" class="level2">
+<h2 class="anchored" data-anchor-id="confidence-interval-1">Confidence Interval</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>t_score_woman <span class="ot">=</span> <span class="fu">qt</span>(<span class="at">p=</span>alpha_woman<span class="sc">/</span><span class="dv">2</span>, <span class="at">df=</span><span class="fu">nrow</span>(woman) <span class="sc">-</span> <span class="dv">1</span>,<span class="at">lower.tail=</span>F) <span class="co"># t-score is used to calculate conf. int. </span></span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>margin_error_woman <span class="ot">=</span> t_score_woman <span class="sc">*</span> se_woman <span class="co"># margin of error is t-score * standard error</span></span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a>lower_bound_woman <span class="ot">=</span> mean_woman <span class="sc">-</span> margin_error_woman</span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a>high_bound_woman <span class="ot">=</span> mean_woman <span class="sc">+</span> margin_error_woman</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>A corresponding confidence interval would be one with 95% confidence, which in this case would be from 0.52 to 0.55. Because the null value of 0.5 is not in this range, we can reject the null hypothesis. This is another way to approach the question.</p>
+</section>
 </section>
 <section id="hypothesis-test-3-hours-worked" class="level1">
 <h1>Hypothesis Test #3: Hours Worked</h1>
 <p>The third hypothesis test comes from the “hrs1” variable which is based on the number of hours worked last week.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>work <span class="ot">&lt;-</span> gss2022 <span class="sc">|&gt;</span> </span>
-<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(hrs1) <span class="sc">|&gt;</span> <span class="co"># pick the hours worked</span></span>
-<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">drop_na</span>()  <span class="co">#get rid of n/a values</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>work <span class="ot">&lt;-</span> gss2022 <span class="sc">|&gt;</span> </span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(hrs1) <span class="sc">|&gt;</span> <span class="co"># pick the hours worked</span></span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">drop_na</span>()  <span class="co">#get rid of n/a values</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>The following is a histogram showing the results of this variable:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(work,</span>
-<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>       <span class="fu">aes</span>(<span class="at">x =</span> hrs1)) <span class="sc">+</span></span>
-<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_histogram</span>(<span class="at">binwidth =</span> <span class="dv">8</span>, <span class="co"># typical workday</span></span>
-<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>                 <span class="at">boundary =</span> <span class="dv">0</span>, <span class="co"># negative values not permitted</span></span>
-<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a>                 <span class="at">color =</span> <span class="st">&quot;white&quot;</span>)  <span class="sc">+</span> </span>
-<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">xlab</span>(<span class="st">&quot;Hours Worked&quot;</span>) <span class="sc">+</span> </span>
-<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ylab</span>(<span class="st">&quot;Count of Respondents&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(work,</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>       <span class="fu">aes</span>(<span class="at">x =</span> hrs1)) <span class="sc">+</span></span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_histogram</span>(<span class="at">binwidth =</span> <span class="dv">8</span>, <span class="co"># typical workday</span></span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>                 <span class="at">boundary =</span> <span class="dv">0</span>, <span class="co"># negative values not permitted</span></span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a>                 <span class="at">color =</span> <span class="st">&quot;white&quot;</span>)  <span class="sc">+</span> </span>
+<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">xlab</span>(<span class="st">&quot;Hours Worked&quot;</span>) <span class="sc">+</span> </span>
+<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ylab</span>(<span class="st">&quot;Count of Respondents&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
@@ -3301,31 +3327,31 @@ vertical-align: -.125em;
 <section id="alpha-level-2" class="level2">
 <h2 class="anchored" data-anchor-id="alpha-level-2">Alpha Level</h2>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>alpha_work <span class="ot">=</span> <span class="fl">0.05</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>alpha_work <span class="ot">=</span> <span class="fl">0.05</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>The alpha level I’m selecting is 0.05. I don’t require extreme precision here, so I’m content with a 95% confidence in my assessment.</p>
 </section>
 <section id="calculate-observed-sample-statistics-2" class="level2">
 <h2 class="anchored" data-anchor-id="calculate-observed-sample-statistics-2">Calculate Observed Sample Statistics</h2>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>mean_work <span class="ot">=</span> <span class="fu">mean</span>(work<span class="sc">$</span>hrs1)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>mean_work <span class="ot">=</span> <span class="fu">mean</span>(work<span class="sc">$</span>hrs1)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>This is a continuous variable. The observed sample statistic is therefore the mean which is 39.94.</p>
 </section>
 <section id="calculate-the-absolute-difference-between-the-statistic-and-the-expected-value-under-the-null-2" class="level2">
 <h2 class="anchored" data-anchor-id="calculate-the-absolute-difference-between-the-statistic-and-the-expected-value-under-the-null-2">Calculate the Absolute Difference Between the Statistic and the Expected Value Under the Null</h2>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>null_work <span class="ot">=</span> <span class="dv">40</span></span>
-<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>absolute_work <span class="ot">=</span> <span class="fu">abs</span>(mean_work <span class="sc">-</span> null_work)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>null_work <span class="ot">=</span> <span class="dv">40</span></span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>absolute_work <span class="ot">=</span> <span class="fu">abs</span>(mean_work <span class="sc">-</span> null_work)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>The null value in this scenario would be 40, i.e. the average person works 40 hours per week. The absolute difference between the statistic (39.94) and the expected value under the null (40) is 0.06.</p>
 </section>
 <section id="convert-this-difference-into-a-z-score-using-the-se-of-the-sampling-distribution-2" class="level2">
 <h2 class="anchored" data-anchor-id="convert-this-difference-into-a-z-score-using-the-se-of-the-sampling-distribution-2">Convert This Difference Into a Z-score Using the SE of the Sampling Distribution</h2>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>sd_work <span class="ot">=</span> <span class="fu">sd</span>(work<span class="sc">$</span>hrs1)</span>
-<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>se_work <span class="ot">=</span> sd_work <span class="sc">/</span> <span class="fu">sqrt</span>(<span class="fu">nrow</span>(work)) <span class="co"># se is sd / sqrt(n)</span></span>
-<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>zscore_work <span class="ot">=</span> absolute_work <span class="sc">/</span> se_work <span class="co"># divide the absolute diff by the SE to get the number of SEs above/below</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>sd_work <span class="ot">=</span> <span class="fu">sd</span>(work<span class="sc">$</span>hrs1)</span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>se_work <span class="ot">=</span> sd_work <span class="sc">/</span> <span class="fu">sqrt</span>(<span class="fu">nrow</span>(work)) <span class="co"># se is sd / sqrt(n)</span></span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>zscore_work <span class="ot">=</span> absolute_work <span class="sc">/</span> se_work <span class="co"># divide the absolute diff by the SE to get the number of SEs above/below</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>To calculate the z-score, I need to convert the absolute difference to the number of SEs above/below the mean of the null sampling distribution. In this case, the mean of the null sampling distribution is 40 and the SE is 0.2926.</p>
 <p>With this information, we know that the difference (in SEs) between the statistic and the expected value under the null is 0.21. This is the z-score.</p>
@@ -3333,7 +3359,7 @@ vertical-align: -.125em;
 <section id="convert-the-z-score-to-a-p-value-2" class="level2">
 <h2 class="anchored" data-anchor-id="convert-the-z-score-to-a-p-value-2">Convert the z-score to a p-value</h2>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>pvalue_work <span class="ot">=</span> (<span class="dv">1</span> <span class="sc">-</span> <span class="fu">pnorm</span>(zscore_work)) <span class="sc">*</span> <span class="dv">2</span> <span class="co"># x2 for low/high tails</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>pvalue_work <span class="ot">=</span> (<span class="dv">1</span> <span class="sc">-</span> <span class="fu">pnorm</span>(zscore_work)) <span class="sc">*</span> <span class="dv">2</span> <span class="co"># x2 for low/high tails</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>This converts to a p-value of 0.8343 using a two-tailed test.</p>
 </section>
@@ -3341,23 +3367,36 @@ vertical-align: -.125em;
 <h2 class="anchored" data-anchor-id="interpret-the-p-value-2">Interpret the p-value</h2>
 <p>Because the p-value is greater than our alpha of 0.05 we fail to reject the null hypothesis. Therefore, our evidence suggests that our sample was drawn from a sampling frame where the mean was 40. As a result, our hypothesis test suggests that (on average) in our population, people do not work more/less than 40 hrs per week.</p>
 </section>
+<section id="confidence-interval-2" class="level2">
+<h2 class="anchored" data-anchor-id="confidence-interval-2">Confidence Interval</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>t_score_work <span class="ot">=</span> <span class="fu">qt</span>(<span class="at">p=</span>alpha_work<span class="sc">/</span><span class="dv">2</span>, <span class="at">df=</span><span class="fu">nrow</span>(work) <span class="sc">-</span> <span class="dv">1</span>,<span class="at">lower.tail=</span>F) <span class="co"># t-score is used to calculate conf. int. </span></span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>margin_error_work <span class="ot">=</span> t_score_work <span class="sc">*</span> se_work <span class="co"># margin of error is t-score * standard error</span></span>
+<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a>lower_bound_work <span class="ot">=</span> mean_work <span class="sc">-</span> margin_error_work</span>
+<span id="cb25-6"><a href="#cb25-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-7"><a href="#cb25-7" aria-hidden="true" tabindex="-1"></a>high_bound_work <span class="ot">=</span> mean_work <span class="sc">+</span> margin_error_work</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>A corresponding confidence interval would be one with 95% confidence, which in this case would be from 39.36 to 40.51. Because the null value of 40 is in this range, we cannot reject the null hypothesis. This is another way to approach the question.</p>
+</section>
 </section>
 <section id="hypothesis-test-4-height" class="level1">
 <h1>Hypothesis Test #4: Height</h1>
 <p>The fourth hypothesis test comes from the “height” variable which is based on the height (in inches) of the respondent.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>rheight <span class="ot">&lt;-</span> gss2022 <span class="sc">|&gt;</span> </span>
-<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(height) <span class="sc">|&gt;</span> <span class="co"># pick the respondent height</span></span>
-<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">drop_na</span>()  <span class="co">#get rid of n/a values</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>rheight <span class="ot">&lt;-</span> gss2022 <span class="sc">|&gt;</span> </span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(height) <span class="sc">|&gt;</span> <span class="co"># pick the respondent height</span></span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">drop_na</span>()  <span class="co">#get rid of n/a values</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>The following is a histogram showing the results of this variable:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(rheight,</span>
-<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>       <span class="fu">aes</span>(<span class="at">x =</span> height)) <span class="sc">+</span></span>
-<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_histogram</span>(<span class="at">binwidth =</span> <span class="dv">2</span>, <span class="co"># 2 inch range</span></span>
-<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a>                 <span class="at">color =</span> <span class="st">&quot;white&quot;</span>)  <span class="sc">+</span> </span>
-<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">xlab</span>(<span class="st">&quot;Height (in)&quot;</span>) <span class="sc">+</span> </span>
-<span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ylab</span>(<span class="st">&quot;Count of Respondents&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb27"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(rheight,</span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a>       <span class="fu">aes</span>(<span class="at">x =</span> height)) <span class="sc">+</span></span>
+<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_histogram</span>(<span class="at">binwidth =</span> <span class="dv">2</span>, <span class="co"># 2 inch range</span></span>
+<span id="cb27-4"><a href="#cb27-4" aria-hidden="true" tabindex="-1"></a>                 <span class="at">color =</span> <span class="st">&quot;white&quot;</span>)  <span class="sc">+</span> </span>
+<span id="cb27-5"><a href="#cb27-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">xlab</span>(<span class="st">&quot;Height (in)&quot;</span>) <span class="sc">+</span> </span>
+<span id="cb27-6"><a href="#cb27-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ylab</span>(<span class="st">&quot;Count of Respondents&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
@@ -3369,31 +3408,31 @@ vertical-align: -.125em;
 <section id="alpha-level-3" class="level2">
 <h2 class="anchored" data-anchor-id="alpha-level-3">Alpha Level</h2>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>alpha_rheight <span class="ot">=</span> <span class="fl">0.1</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb28"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a>alpha_rheight <span class="ot">=</span> <span class="fl">0.1</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>The alpha level I’m selecting is 0.1. Being extremely precise with height isn’t that important, nor is it possible since the height is self-reported and not precisely measured. As a result, I’m OK with 90% confidence</p>
 </section>
 <section id="calculate-observed-sample-statistics-3" class="level2">
 <h2 class="anchored" data-anchor-id="calculate-observed-sample-statistics-3">Calculate Observed Sample Statistics</h2>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>mean_rheight <span class="ot">=</span> <span class="fu">mean</span>(rheight<span class="sc">$</span>height)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb29"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a>mean_rheight <span class="ot">=</span> <span class="fu">mean</span>(rheight<span class="sc">$</span>height)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>This is a continuous variable. The observed sample statistic is therefore the mean which is 67.21.</p>
 </section>
 <section id="calculate-the-absolute-difference-between-the-statistic-and-the-expected-value-under-the-null-3" class="level2">
 <h2 class="anchored" data-anchor-id="calculate-the-absolute-difference-between-the-statistic-and-the-expected-value-under-the-null-3">Calculate the Absolute Difference Between the Statistic and the Expected Value Under the Null</h2>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb27"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>null_rheight <span class="ot">=</span> <span class="fl">66.5</span> <span class="co"># average height of an American (69 for men, 64 for women)</span></span>
-<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a>absolute_rheight <span class="ot">=</span> <span class="fu">abs</span>(mean_rheight <span class="sc">-</span> null_rheight)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb30"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a>null_rheight <span class="ot">=</span> <span class="fl">66.5</span> <span class="co"># average height of an American (69 for men, 64 for women)</span></span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a>absolute_rheight <span class="ot">=</span> <span class="fu">abs</span>(mean_rheight <span class="sc">-</span> null_rheight)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>The null value in this scenario would be 66.5, i.e. the average person is 66.5 inches tall. The absolute difference between the statistic (67.21) and the expected value under the null (66.5) is 0.71.</p>
 </section>
 <section id="convert-this-difference-into-a-z-score-using-the-se-of-the-sampling-distribution-3" class="level2">
 <h2 class="anchored" data-anchor-id="convert-this-difference-into-a-z-score-using-the-se-of-the-sampling-distribution-3">Convert This Difference Into a Z-score Using the SE of the Sampling Distribution</h2>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb28"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a>sd_rheight <span class="ot">=</span> <span class="fu">sd</span>(rheight<span class="sc">$</span>height)</span>
-<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a>se_rheight <span class="ot">=</span> sd_rheight <span class="sc">/</span> <span class="fu">sqrt</span>(<span class="fu">nrow</span>(rheight)) <span class="co"># se is sd / sqrt(n)</span></span>
-<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a>zscore_rheight <span class="ot">=</span> absolute_rheight <span class="sc">/</span> se_rheight <span class="co"># divide the absolute diff by the SE to get the number of SEs above/below</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb31"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a>sd_rheight <span class="ot">=</span> <span class="fu">sd</span>(rheight<span class="sc">$</span>height)</span>
+<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a>se_rheight <span class="ot">=</span> sd_rheight <span class="sc">/</span> <span class="fu">sqrt</span>(<span class="fu">nrow</span>(rheight)) <span class="co"># se is sd / sqrt(n)</span></span>
+<span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a>zscore_rheight <span class="ot">=</span> absolute_rheight <span class="sc">/</span> se_rheight <span class="co"># divide the absolute diff by the SE to get the number of SEs above/below</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>To calculate the z-score, I need to convert the absolute difference to the number of SEs above/below the mean of the null sampling distribution. In this case, the mean of the null sampling distribution is 66.5 and the SE is 0.0868.</p>
 <p>With this information, we know that the difference (in SEs) between the statistic and the expected value under the null is 8.15. This is the z-score.</p>
@@ -3401,13 +3440,26 @@ vertical-align: -.125em;
 <section id="convert-the-z-score-to-a-p-value-3" class="level2">
 <h2 class="anchored" data-anchor-id="convert-the-z-score-to-a-p-value-3">Convert the z-score to a p-value</h2>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb29"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a>pvalue_rheight <span class="ot">=</span> (<span class="dv">1</span> <span class="sc">-</span> <span class="fu">pnorm</span>(zscore_rheight)) <span class="sc">*</span> <span class="dv">2</span> <span class="co"># x2 for low/high tails</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb32"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a>pvalue_rheight <span class="ot">=</span> (<span class="dv">1</span> <span class="sc">-</span> <span class="fu">pnorm</span>(zscore_rheight)) <span class="sc">*</span> <span class="dv">2</span> <span class="co"># x2 for low/high tails</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>This converts to a p-value of 0 using a two-tailed test.</p>
 </section>
 <section id="interpret-the-p-value-3" class="level2">
 <h2 class="anchored" data-anchor-id="interpret-the-p-value-3">Interpret the p-value</h2>
 <p>Because the p-value is less than our alpha of 0.1 we reject the null hypothesis. Therefore, our evidence suggests that our sample was not drawn from a sampling frame where the mean was 66.5. As a result, our hypothesis test suggests that our sample was not drawn from a population where the mean height is the average height of an American.</p>
+</section>
+<section id="confidence-interval-3" class="level2">
+<h2 class="anchored" data-anchor-id="confidence-interval-3">Confidence Interval</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb33"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a>t_score_rheight <span class="ot">=</span> <span class="fu">qt</span>(<span class="at">p=</span>alpha_rheight<span class="sc">/</span><span class="dv">2</span>, <span class="at">df=</span><span class="fu">nrow</span>(rheight) <span class="sc">-</span> <span class="dv">1</span>,<span class="at">lower.tail=</span>F) <span class="co"># t-score is used to calculate conf. int. </span></span>
+<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a>margin_error_rheight <span class="ot">=</span> t_score_rheight <span class="sc">*</span> se_rheight <span class="co"># margin of error is t-score * standard error</span></span>
+<span id="cb33-4"><a href="#cb33-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-5"><a href="#cb33-5" aria-hidden="true" tabindex="-1"></a>lower_bound_rheight <span class="ot">=</span> mean_rheight <span class="sc">-</span> margin_error_rheight</span>
+<span id="cb33-6"><a href="#cb33-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-7"><a href="#cb33-7" aria-hidden="true" tabindex="-1"></a>high_bound_rheight <span class="ot">=</span> mean_rheight <span class="sc">+</span> margin_error_rheight</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>A corresponding confidence interval would be one with 90% confidence, which in this case would be from 67.06 to 67.35. Because the null value of 66.5 is not in this range, we can reject the null hypothesis. This is another way to approach the question.</p>
 </section>
 </section>
 
