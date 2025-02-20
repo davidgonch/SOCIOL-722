@@ -1,0 +1,398 @@
+---
+title: "Week 6 - Homework"
+format: 
+  html:
+    embed-resources: true
+editor: visual
+
+author: "David Gonzalez Chavez"
+
+execute:
+  echo: true
+  warning: false
+  message: false
+  freeze: auto
+---
+
+```{r}
+#| echo: false
+#| message: false
+#| warning: false
+
+library(tidyverse)
+library(gssr)
+
+theme_set(theme_light())
+
+```
+
+# Hypothesis Testing Steps
+
+The following is the algorithm of a hypothesis test, as copied directly from this week's slides. This will be the foundation for the 4 hypothesis tests I'll be conducting for this homework.
+
+1. Choose an alpha level (say, .05)
+2. Calculate the observed sample statistic (e.g., .55)
+3. Calculate the absolute difference between the statistic and the expected value under the null (.55 - .50 = .05)
+4. Convert this difference into a z-score using the SE of the sampling distribution (z = .05 / .0204 = 2.45)
+5. Convert the z-score to a p-value (.014)
+6. If the p-value is less than alpha **reject the null hypothesis**; if the p-value is greater than alpha **fail to reject the null hypothesis**
+
+# Data
+
+The data for this homework assignment comes from the 2022 GSS.
+
+```{r}
+
+gss2022 <- gss_get_yr(year = 2022) |> # get 2022 GSS data
+  haven::zap_labels()                 # remove labels
+
+```
+
+# Hypothesis Test #1: Voting for Biden
+
+The first hypothesis test comes from the "pres20" variable which asked who people voted for in 2020. Though the data is from 2022, I will use this data as though it were pre-election and I was trying to determine if Biden was going to win a majority of votes.
+
+```{r}
+
+biden <- gss2022 |> 
+  select(pres20) |> # pick the pres20 question asking who they voted for in 2020 election
+  drop_na() |>  #get rid of n/a values
+  filter(pres20 != 4) |>  # removing people who did not vote, since they don't impact elections
+  mutate(vote = if_else(pres20 == 1, 1, 0)) |>  # make it binary: voted for biden or not
+  select(vote) # only interested in my constructed binary variable
+
+  
+```
+
+The following is a bar graph showing the results of this variable:
+
+```{r}
+
+biden_plot <- biden |> 
+  mutate(vote = if_else(vote == 1, "biden", "Not biden"))
+
+ggplot(biden_plot,
+       aes(x = vote)) +
+  geom_bar() + 
+  xlab("Candidate Voted For") + 
+  ylab("Count of Respondents")
+
+```
+
+## Alpha Level
+
+```{r}
+
+alpha_biden = 0.01
+
+```
+
+The alpha level I'm selecting is `{r} alpha_biden`. Who wins an election is a very important question, so I want a smaller alpha level to limit potentially erroneous conclusions.
+
+## Calculate Observed Sample Statistics
+
+```{r}
+
+mean_biden = mean(biden$vote)
+
+```
+
+Because this is a binary variable (i.e., voted for biden or not), the observed sample statistic is just the proportion that voted for Biden which is `{r} round(mean_biden,2)`. 
+
+## Calculate the Absolute Difference Between the Statistic and the Expected Value Under the Null
+
+```{r}
+
+null_biden = .5
+absolute_biden = abs(mean_biden - null_biden)
+
+```
+
+The null value in this scenario would be .5, i.e. Biden receiving exactly 50% of the votes. The absolute difference between the statistic (`{r} round(mean_biden,2)`) and the expected value under the null (`{r} null_biden`) is `{r} round(absolute_biden,2)`.
+
+## Convert This Difference Into a Z-score Using the SE of the Sampling Distribution
+
+```{r}
+
+sd_biden = sd(biden$vote)
+se_biden = sd_biden / sqrt(nrow(biden)) # se is sd / sqrt(n)
+zscore_biden = absolute_biden / se_biden # divide the absolute diff by the SE to get the number of SEs above/below
+
+```
+
+To calculate the z-score, I  need to convert the absolute difference to the number of SEs above/below the mean of the null sampling distribution. In this case, the mean of the null sampling distribution is `{r} null_biden` and the SE is `{r} round(se_biden, 4)`.
+
+With this information, we know that the difference (in SEs) between the statistic and the expected value under the null is `{r} round(zscore_biden,2)`. This is the z-score.
+
+## Convert the z-score to a p-value
+
+```{r}
+
+pvalue_biden = (1 - pnorm(zscore_biden)) * 2 # x2 for low/high tails
+
+```
+
+This converts to a p-value of `{r} pvalue_biden` using a two-tailed test.
+
+## Interpret the p-value
+
+Because the p-value is less than our alpha of `{r} alpha_biden` we can reject the null hypothesis. Therefore, our evidence suggests that our sample was not drawn from a sampling frame where the mean was `{r} null_biden`. As a result, our hypothesis test suggests that Biden will win the 2020 election.
+
+# Hypothesis Test #2: Respondent Sex
+
+The second hypothesis test comes from the "sex" variable which is based on the sex of the respondent. I will construct a variable "woman" which is whether or not a respondent is a woman.
+
+```{r}
+
+woman <- gss2022 |> 
+  select(sex) |> # pick the sex
+  drop_na() |>  #get rid of n/a values
+  mutate(iswoman = if_else(sex == 2, 1, 0)) |>  # make it binary: woman or not
+  select(iswoman) # only interested in my constructed binary variable
+
+  
+```
+
+The following is a bar graph showing the results of this variable:
+
+```{r}
+
+woman_plot <- woman |> 
+  mutate(iswoman = if_else(iswoman == 1, "Woman", "Not Woman"))
+
+ggplot(woman_plot,
+       aes(x = iswoman)) +
+  geom_bar() + 
+  xlab("Candidate Voted For") + 
+  ylab("Count of Respondents")
+
+```
+
+## Alpha Level
+
+```{r}
+
+alpha_woman = 0.05
+
+```
+
+The alpha level I'm selecting is `{r} alpha_woman`. Predicting the exact gender split of our target population is not particularly high-stakes, so I'm comfortable with a 0.05 alpha level.
+
+## Calculate Observed Sample Statistics
+
+```{r}
+
+mean_woman = mean(woman$iswoman)
+
+```
+
+Because this is a binary variable (i.e., woman or not woman), the observed sample statistic is just the proportion that is a woman which is `{r} round(mean_woman,2)`. 
+
+## Calculate the Absolute Difference Between the Statistic and the Expected Value Under the Null
+
+```{r}
+
+null_woman = .5
+absolute_woman = abs(mean_woman - null_woman)
+
+```
+
+The null value in this scenario would be .5, i.e. 50% of the population are women. The absolute difference between the statistic (`{r} round(mean_woman,2)`) and the expected value under the null (`{r} null_woman`) is `{r} round(absolute_woman,2)`.
+
+## Convert This Difference Into a Z-score Using the SE of the Sampling Distribution
+
+```{r}
+
+sd_woman = sd(woman$iswoman)
+se_woman = sd_woman / sqrt(nrow(woman)) # se is sd / sqrt(n)
+zscore_woman = absolute_woman / se_woman # divide the absolute diff by the SE to get the number of SEs above/below
+
+```
+
+To calculate the z-score, I  need to convert the absolute difference to the number of SEs above/below the mean of the null sampling distribution. In this case, the mean of the null sampling distribution is `{r} null_woman` and the SE is `{r} round(se_woman, 4)`.
+
+With this information, we know that the difference (in SEs) between the statistic and the expected value under the null is `{r} round(zscore_woman,2)`. This is the z-score.
+
+## Convert the z-score to a p-value
+
+```{r}
+
+pvalue_woman = (1 - pnorm(zscore_woman)) * 2 # x2 for low/high tails
+
+```
+
+This converts to a p-value of `{r} round(pvalue_woman,4)` using a two-tailed test.
+
+## Interpret the p-value
+
+Because the p-value is less than our alpha of `{r} alpha_woman` we can reject the null hypothesis. Therefore, our evidence suggests that our sample was not drawn from a sampling frame where the mean was `{r} null_woman`. As a result, our hypothesis test suggests that our population has more women than men.
+
+
+# Hypothesis Test #3: Hours Worked
+
+The third hypothesis test comes from the "hrs1" variable which is based on the number of hours worked last week.
+
+```{r}
+
+work <- gss2022 |> 
+  select(hrs1) |> # pick the hours worked
+  drop_na()  #get rid of n/a values
+  
+```
+
+The following is a histogram showing the results of this variable:
+
+```{r}
+
+ggplot(work,
+       aes(x = hrs1)) +
+  geom_histogram(binwidth = 8, # typical workday
+                 boundary = 0, # negative values not permitted
+                 color = "white")  + 
+  xlab("Hours Worked") + 
+  ylab("Count of Respondents")
+
+```
+
+## Alpha Level
+
+```{r}
+
+alpha_work = 0.05
+
+```
+
+The alpha level I'm selecting is `{r} alpha_work`. I don't require extreme precision here, so I'm content with a 95% confidence in my assessment.
+
+## Calculate Observed Sample Statistics
+
+```{r}
+
+mean_work = mean(work$hrs1)
+
+```
+
+This is a continuous variable. The observed sample statistic is therefore the mean which is `{r} round(mean_work,2)`. 
+
+## Calculate the Absolute Difference Between the Statistic and the Expected Value Under the Null
+
+```{r}
+
+null_work = 40
+absolute_work = abs(mean_work - null_work)
+
+```
+
+The null value in this scenario would be `{r} null_work`, i.e. the average person works `{r} null_work` hours per week. The absolute difference between the statistic (`{r} round(mean_work,2)`) and the expected value under the null (`{r} null_work`) is `{r} round(absolute_work,2)`.
+
+## Convert This Difference Into a Z-score Using the SE of the Sampling Distribution
+
+```{r}
+
+sd_work = sd(work$hrs1)
+se_work = sd_work / sqrt(nrow(work)) # se is sd / sqrt(n)
+zscore_work = absolute_work / se_work # divide the absolute diff by the SE to get the number of SEs above/below
+
+```
+
+To calculate the z-score, I  need to convert the absolute difference to the number of SEs above/below the mean of the null sampling distribution. In this case, the mean of the null sampling distribution is `{r} null_work` and the SE is `{r} round(se_work, 4)`.
+
+With this information, we know that the difference (in SEs) between the statistic and the expected value under the null is `{r} round(zscore_work,2)`. This is the z-score.
+
+## Convert the z-score to a p-value
+
+```{r}
+
+pvalue_work = (1 - pnorm(zscore_work)) * 2 # x2 for low/high tails
+
+```
+
+This converts to a p-value of `{r} round(pvalue_work,4)` using a two-tailed test.
+
+## Interpret the p-value
+
+Because the p-value is greater than our alpha of `{r} alpha_work` we fail to reject the null hypothesis. Therefore, our evidence suggests that our sample was  drawn from a sampling frame where the mean was `{r} null_work`. As a result, our hypothesis test suggests that (on average) in our population, people do not work more/less than 40 hrs per week.
+
+# Hypothesis Test #4: Height
+
+The fourth hypothesis test comes from the "height" variable which is based on the height (in inches) of the respondent.
+
+```{r}
+
+rheight <- gss2022 |> 
+  select(height) |> # pick the respondent height
+  drop_na()  #get rid of n/a values
+  
+```
+
+The following is a histogram showing the results of this variable:
+
+```{r}
+
+ggplot(rheight,
+       aes(x = height)) +
+  geom_histogram(binwidth = 2, # 2 inch range
+                 color = "white")  + 
+  xlab("Height (in)") + 
+  ylab("Count of Respondents")
+
+```
+
+## Alpha Level
+
+```{r}
+
+alpha_rheight = 0.1
+
+```
+
+The alpha level I'm selecting is `{r} alpha_rheight`. Being extremely precise with height isn't that important, nor is it possible since the height is self-reported and not precisely measured. As a result, I'm OK with 90% confidence
+
+## Calculate Observed Sample Statistics
+
+```{r}
+
+mean_rheight = mean(rheight$height)
+
+```
+
+This is a continuous variable. The observed sample statistic is therefore the mean which is `{r} round(mean_rheight,2)`. 
+
+## Calculate the Absolute Difference Between the Statistic and the Expected Value Under the Null
+
+```{r}
+
+null_rheight = 66.5 # average height of an American (69 for men, 64 for women)
+absolute_rheight = abs(mean_rheight - null_rheight)
+
+```
+
+The null value in this scenario would be `{r} null_rheight`, i.e. the average person is `{r} null_rheight` inches tall. The absolute difference between the statistic (`{r} round(mean_rheight,2)`) and the expected value under the null (`{r} null_rheight`) is `{r} round(absolute_rheight,2)`.
+
+## Convert This Difference Into a Z-score Using the SE of the Sampling Distribution
+
+```{r}
+
+sd_rheight = sd(rheight$height)
+se_rheight = sd_rheight / sqrt(nrow(rheight)) # se is sd / sqrt(n)
+zscore_rheight = absolute_rheight / se_rheight # divide the absolute diff by the SE to get the number of SEs above/below
+
+```
+
+To calculate the z-score, I  need to convert the absolute difference to the number of SEs above/below the mean of the null sampling distribution. In this case, the mean of the null sampling distribution is `{r} null_rheight` and the SE is `{r} round(se_rheight, 4)`.
+
+With this information, we know that the difference (in SEs) between the statistic and the expected value under the null is `{r} round(zscore_rheight,2)`. This is the z-score.
+
+## Convert the z-score to a p-value
+
+```{r}
+
+pvalue_rheight = (1 - pnorm(zscore_rheight)) * 2 # x2 for low/high tails
+
+```
+
+This converts to a p-value of `{r} round(pvalue_rheight,4)` using a two-tailed test.
+
+## Interpret the p-value
+
+Because the p-value is less than our alpha of `{r} alpha_rheight` we reject the null hypothesis. Therefore, our evidence suggests that our sample was not drawn from a sampling frame where the mean was `{r} null_rheight`. As a result, our hypothesis test suggests that our sample was not drawn from a population where the mean height is the average height of an American.
