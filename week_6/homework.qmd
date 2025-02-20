@@ -69,7 +69,7 @@ The following is a bar graph showing the results of this variable:
 ```{r}
 
 biden_plot <- biden |> 
-  mutate(vote = if_else(vote == 1, "biden", "Not biden"))
+  mutate(vote = if_else(vote == 1, "Biden", "Not Biden"))
 
 ggplot(biden_plot,
        aes(x = vote)) +
@@ -163,7 +163,7 @@ woman_plot <- woman |>
 ggplot(woman_plot,
        aes(x = iswoman)) +
   geom_bar() + 
-  xlab("Candidate Voted For") + 
+  xlab("Respondent Sex") + 
   ylab("Count of Respondents")
 
 ```
