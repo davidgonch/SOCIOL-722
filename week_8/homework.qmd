@@ -1,0 +1,498 @@
+---
+title: "Week 7 & 8 - Homework"
+format: 
+  html:
+    embed-resources: true
+editor: visual
+
+author: "David Gonzalez Chavez"
+
+execute:
+  echo: true
+  warning: false
+  message: false
+  freeze: auto
+---
+
+```{r}
+#| echo: false
+#| message: false
+#| warning: false
+
+library(tidyverse)
+library(gssr)
+library(pwr)
+library(effectsize)
+
+theme_set(theme_light())
+
+```
+
+# Data
+
+The data for this homework assignment comes from the 2022 GSS.
+
+```{r}
+
+gss2022 <- gss_get_yr(year = 2022) |> # get 2022 GSS data
+  haven::zap_labels()                 # remove labels
+
+```
+
+# Groups #1: Depressed vs. Not Depressed
+
+The first set of groups I will analyze are individuals from the 2022 GSS who describe having been diagnosed with depression and those who have not. 
+
+```{r}
+
+depr_all <- gss2022 |> 
+  select(depress, frndfam, postlifenv) |> # select the depressed variable and comparison variables
+  drop_na() |> 
+  mutate(depr_label = if_else(depress == 1, "Depressed", "Not Depressed")) |> 
+  mutate(depress = if_else(depress == 1, 1, 0))
+
+ggplot(depr_all, 
+       aes(x = depr_label)) +
+  geom_bar() + 
+  xlab("Diagnosis") + 
+  ylab("Count")
+
+```
+
+## Comparison #1: Relatives vs. Friends
+
+The first comparison between depressed vs. non-depressed individuals is for the question "frndfam" which asks respondents whether they believe close relatives are most important in life (1) or close friends are most important in life (7).
+
+
+```{r} 
+
+depr_fr_plot <- depr_all |>
+  group_by(depr_label, frndfam) |> # group by depressed and the selected response
+  summarize(n = n()) |> # get count with that combo
+  mutate(percent = n/sum(n)) # get percent of group for each subgroup
+
+ggplot(depr_fr_plot,
+       aes(x = frndfam,
+           fill = depr_label,
+           y = percent)) +
+  geom_bar(position = "dodge",
+           stat = "identity") +
+  labs(x = "Family (1) or Friends (7) More Important",
+       fill = "Diagnosis Status") +
+  scale_y_continuous(labels = scales::percent)
+
+```
+
+### Hypotheses
+
+The following are the hypotheses which I will test for this comparison.
+
+$$ H_0: \mu_{\tiny{depressed}} - \mu_{\tiny{not depressed}} = 0 $$
+
+$$ H_1: \mu_{\tiny{depressed}} - \mu_{\tiny{not depressed}} \neq 0 $$
+
+### Hypothesis Test
+
+For this hypothesis test, I will use an alpha level of 0.05. 
+
+```{r}
+
+depr_fr_d <- depr_all |> 
+  filter(depress == 1)
+
+depr_fr_nd <- depr_all |> 
+  filter(depress == 0)
+
+mean_depr_fr_d <- mean(depr_fr_d$frndfam)
+mean_depr_fr_nd <- mean(depr_fr_nd$frndfam)
+
+sd_depr_fr_d <- sd(depr_fr_d$frndfam)
+sd_depr_fr_nd <- sd(depr_fr_nd$frndfam)
+
+n_depr_fr_d <- nrow(depr_fr_d)
+n_depr_fr_nd <- nrow(depr_fr_nd)
+
+zstat_depr_fr <- (mean_depr_fr_d - mean_depr_fr_nd) / sqrt((sd_depr_fr_d  ^ 2 / n_depr_fr_d) + (sd_depr_fr_nd ^ 2 / n_depr_fr_nd))
+
+pval_depr_fr <- (1 - pnorm(zstat_depr_fr)) * 2    # two-sided p-value
+
+```
+
+The pvalue for this hypothesis test is `{r} round(pval_depr_fr,2)`. Because this is above the alpha level of 0.05, we cannot reject the null hypothesis. This indicates that we cannot state that these two groups (depressed, not depressed) were drawn from populations who held different beliefs about the value of friends vs. family.
+
+### Confidence Interval
+
+```{r}
+
+diff_depr_fr <- mean_depr_fr_d - mean_depr_fr_nd
+sediff_depr_fr <- sqrt((sd_depr_fr_d ^ 2/ n_depr_fr_d) + (sd_depr_fr_nd ^ 2 / n_depr_fr_nd))
+
+lower_depr_fr <- diff_depr_fr - qnorm(1 - (.05 / 2)) * sediff_depr_fr # get lower bound using 95% confidence
+upper_depr_fr <- diff_depr_fr + qnorm(1 - (.05 / 2)) * sediff_depr_fr # get higher bound using 95% confidence
+```
+
+A 95% confidence interval for this comparison would be would be between `{r} round(lower_depr_fr, 2)` and `{r} round(upper_depr_fr, 2)`. Because 0 is in the range, we cannot reject the null hypothesis ($H_0$).
+
+### Effect Size
+
+Cohen's d, aka the standardized mean difference, can be calculated using the following formula when comparing two groups:
+
+$$ d = \frac{\bar{x}_1 - \bar{x}_2}{\sigma}\ $$
+
+Here, $\bar{x}_1$ represents the mean of the first sample (depressed) and $\bar{x}_2$ represents the mean of the second sample (not depressed). $\sigma$ represents the standard deviation of both groups (depressed or not depressed).
+
+```{r}
+
+sd_depr_all = sd(depr_all$frndfam)
+
+d_depr_frndfam = (mean_depr_fr_d - mean_depr_fr_nd) / sd_depr_all
+
+```
+
+The Cohen's d for this comparison is `{r} round(abs(d_depr_frndfam),2)`, i.e. that is the difference between the groups in terms of standard deviations.
+
+The probability of superiority is a calculation that states the probability of selecting an individual from one sample that has a higher value than one from the other sample is selecting one from each independently.
+
+
+```{r}
+
+ps_depr_frndfam_n <- p_superiority(frndfam ~ depress,
+                                   data = depr_all,
+                                   parametric = TRUE) # use normal approximation
+
+ps_depr_frndfam_d <- p_superiority(frndfam ~ depress,
+                                   data = depr_all,
+                                   parametric = FALSE) # calculate directly
+
+# I need to do 1 - the ps to get the right order since depress = 1
+
+```
+
+For this comparison, the probability of selecting someone with depression who has a higher response (i.e., friends more important) than someone without depression randomly is `{r} round(1 - ps_depr_frndfam_n$p_superiority, 3)*100`% when calculated using a normal approximation and `{r} round(1 - ps_depr_frndfam_d$p_superiority, 3)*100`% when calculated directly.
+
+## Comparison #2: Belief in the Afterlife
+
+The first comparison between depressed vs. non-depressed individuals is for the question "postlifenv" which asks respondents whether they believe there is life after death.
+
+
+```{r} 
+
+depr_life_plot <- depr_all |>
+  group_by(depr_label, postlifenv) |> # group by depressed and the selected response
+  summarize(n = n()) |> # get count with that combo
+  mutate(percent = n/sum(n)) |>  # get percent of group for each subgroup
+  mutate(postlifenv = if_else(postlifenv == 1, 1, 0)) |>  # if believe 1, if not 0
+  mutate(postlifenv_label = if_else(postlifenv == 1, "Believes in Afterlife", "Does Not Believe in Afterlife"))
+
+ggplot(depr_life_plot,
+       aes(x = postlifenv_label,
+           fill = depr_label,
+           y = percent)) +
+  geom_bar(position = "dodge",
+           stat = "identity") +
+  labs(x = "Belief in Afterlife",
+       fill = "Diagnosis Status") + 
+  scale_y_continuous(labels = scales::percent) # make y-axis percent
+
+```
+
+### Hypotheses
+
+The following are the hypotheses which I will test for this comparison.
+
+$$ H_0: \mu_{\tiny{depressed}} - \mu_{\tiny{not depressed}} = 0 $$
+
+$$ H_1: \mu_{\tiny{depressed}} - \mu_{\tiny{not depressed}} \neq 0 $$
+
+### Hypothesis Test
+
+For this hypothesis test, I will use an alpha level of 0.05. 
+
+```{r}
+
+depr_life_d <- depr_all |> 
+  filter(depress == 1)
+
+depr_life_nd <- depr_all |> 
+  filter(depress == 0)
+
+mean_depr_life_d <- mean(depr_life_d$postlifenv)
+mean_depr_life_nd <- mean(depr_life_nd$postlifenv)
+
+sd_depr_life_d <- sd(depr_life_d$postlifenv)
+sd_depr_life_nd <- sd(depr_life_nd$postlifenv)
+
+n_depr_life_d <- nrow(depr_life_d)
+n_depr_life_nd <- nrow(depr_life_nd)
+
+zstat_depr_life <- abs(mean_depr_life_d - mean_depr_life_nd) / sqrt((sd_depr_life_d  ^ 2 / n_depr_life_d) + (sd_depr_life_nd ^ 2 / n_depr_life_nd)) # use abs value to prevent negative difference
+
+pval_depr_life <- (1 - pnorm(zstat_depr_life)) * 2    # two-sided p-value
+
+```
+
+The pvalue for this hypothesis test is `{r} round(pval_depr_life,4)`. Because this is above the alpha level of 0.05, we cannot reject the null hypothesis. This indicates that we cannot state that these two groups (depressed, not depressed) were drawn from populations whose belief in the afterlife is different from one another.
+
+### Confidence Interval
+
+```{r}
+
+diff_depr_life <- mean_depr_life_d - mean_depr_life_nd
+sediff_depr_life <- sqrt((sd_depr_life_d ^ 2/ n_depr_life_d) + (sd_depr_life_nd ^ 2 / n_depr_life_nd))
+
+lower_depr_life <- diff_depr_life - qnorm(1 - (.05 / 2)) * sediff_depr_life # get lower bound using 95% confidence
+upper_depr_life <- diff_depr_life + qnorm(1 - (.05 / 2)) * sediff_depr_life # get higher bound using 95% confidence
+```
+
+A 95% confidence interval for this comparison would be would be between `{r} round(lower_depr_life, 2)` and `{r} round(upper_depr_life, 2)`. Because 0 is in the range, we cannot reject the null hypothesis ($H_0$).
+
+
+
+# Groups #2: Male vs. Female
+
+The second set of groups I will analyze are women or men who responded to the 2022 GSS. 
+
+```{r}
+
+sex_all <- gss2022 |> 
+  select(sex, wksexism, hrsrelax) |> # select the sex variable and comparison variables
+  drop_na() |> 
+  mutate(sex_label = if_else(sex == 1, "Male", "Female")) |> 
+  mutate(sex = if_else(sex == 1, 1, 0)) |> 
+  mutate(wksexism = if_else(wksexism == 1, 1, 0))
+
+ggplot(sex_all, 
+       aes(x = sex_label)) +
+  geom_bar() + 
+  xlab("Sex") + 
+  ylab("Count")
+
+```
+
+## Comparison #1: Number of Hours to Relax
+
+The first comparison between male vs. female individuals is for the question "hrsrelax" which asks respondents how many hours they have to relax on a typical workday.
+
+
+```{r} 
+
+sex_relax_plot <- sex_all |>
+  group_by(sex_label, hrsrelax) |> # group by sex and the selected response
+  summarize(n = n()) |> # get count with that combo
+  mutate(percent = n/sum(n)) # get percent of group for each subgroup
+
+ggplot(sex_relax_plot,
+       aes(x = hrsrelax,
+           fill = sex_label,
+           y = percent)) +
+  geom_bar(position = "dodge",
+           stat = "identity") +
+  labs(x = "Hours to Relax",
+       fill = "Sex") +
+  scale_y_continuous(labels = scales::percent)
+
+```
+
+### Hypotheses
+
+The following are the hypotheses which I will test for this comparison.
+
+$$ H_0: \mu_{\tiny{male}} - \mu_{\tiny{female}} = 0 $$
+
+$$ H_1: \mu_{\tiny{male}} - \mu_{\tiny{female}} \neq 0 $$
+
+### Hypothesis Test
+
+For this hypothesis test, I will use an alpha level of 0.05. 
+
+```{r}
+
+sex_relax_m <- sex_all |> 
+  filter(sex == 1)
+
+sex_relax_f <- sex_all |> 
+  filter(sex == 0)
+
+mean_sex_relax_m <- mean(sex_relax_m$hrsrelax)
+mean_sex_relax_f <- mean(sex_relax_f$hrsrelax)
+
+sd_sex_relax_m <- sd(sex_relax_m$hrsrelax)
+sd_sex_relax_f <- sd(sex_relax_f$hrsrelax)
+
+n_sex_relax_m <- nrow(sex_relax_m)
+n_sex_relax_f <- nrow(sex_relax_f)
+
+zstat_sex_relax <- abs(mean_sex_relax_m - mean_sex_relax_f) / sqrt((sd_sex_relax_m  ^ 2 / n_sex_relax_m) + (sd_sex_relax_f ^ 2 / n_sex_relax_f))
+
+pval_sex_relax <- (1 - pnorm(zstat_sex_relax)) * 2    # two-sided p-value
+
+```
+
+The mean number of hours men relax in the sample is `{r} round(mean_sex_relax_m,2)`, while for women it is `{r} round(mean_sex_relax_f,2)`.
+
+The pvalue for this hypothesis test is `{r} round(pval_sex_relax,4)`. Because this is below the alpha level of 0.05, we can reject the null hypothesis. This indicates that these two groups (female, male) were drawn from populations who have different amounts of time to relax after work.
+
+### Confidence Interval
+
+```{r}
+
+diff_sex_relax <- mean_sex_relax_m - mean_sex_relax_f
+sediff_sex_relax <- sqrt((sd_sex_relax_m ^ 2/ n_sex_relax_m) + (sd_sex_relax_f ^ 2 / n_sex_relax_f))
+
+lower_sex_relax <- diff_sex_relax - qnorm(1 - (.05 / 2)) * sediff_sex_relax # get lower bound using 95% confidence
+upper_sex_relax <- diff_sex_relax + qnorm(1 - (.05 / 2)) * sediff_sex_relax # get higher bound using 95% confidence
+```
+
+A 95% confidence interval for this comparison would be would be between `{r} round(lower_sex_relax, 2)` and `{r} round(upper_sex_relax, 2)`. Because 0 is not in the range, we can reject the null hypothesis ($H_0$).
+
+### Effect Size
+
+Cohen's d, aka the standardized mean difference, can be calculated using the following formula when comparing two groups:
+
+$$ d = \frac{\bar{x}_1 - \bar{x}_2}{\sigma}\ $$
+
+Here, $\bar{x}_1$ represents the mean of the first sample (male) and $\bar{x}_2$ represents the mean of the second sample (female). $\sigma$ represents the standard deviation of both groups (male or female).
+
+```{r}
+
+sd_sex_all = sd(sex_all$hrsrelax)
+
+d_sex_hrsrelax = (mean_sex_relax_f - mean_sex_relax_m) / sd_sex_all
+
+```
+
+The Cohen's d for this comparison is `{r} round(abs(d_sex_hrsrelax),2)`, i.e. that is the difference between the groups in terms of standard deviations.
+
+The probability of superiority is a calculation that states the probability of selecting an individual from one sample that has a higher value than one from the other sample is selecting one from each independently.
+
+
+```{r}
+
+ps_sex_hrsrelax_n <- p_superiority(hrsrelax ~ sex,
+                                   data = sex_all,
+                                   parametric = TRUE) # use normal approximation
+
+ps_sex_hrsrelax_d <- p_superiority(hrsrelax ~ sex,
+                                   data = sex_all,
+                                   parametric = FALSE) # calculate directly
+
+# I need to do 1 - the ps to get the right order since male = 1
+
+```
+
+For this comparison, the probability of selecting a man who has more hours to relax than a woman randomly is `{r} round(1 - ps_sex_hrsrelax_n$p_superiority, 3)*100`% when calculated using a normal approximation and `{r} round(1 - ps_sex_hrsrelax_d$p_superiority, 3)*100`% when calculated directly.
+
+## Comparison #2: Experiencing Workplace Sexism
+
+The second comparison between male vs. female individuals is for the question "wksexism" which asks respondents whether they've experienced workplace discrimination on the basis of their sex.
+
+
+```{r} 
+
+sex_sexism_plot <- sex_all |>
+  mutate(wksexism_label = if_else(wksexism == 1, "Yes", "No")) |> 
+  group_by(sex_label, wksexism_label) |> # group by sex and the selected response
+  summarize(n = n()) |> # get count with that combo
+  mutate(percent = n/sum(n)) # get percent of group for each subgroup
+
+ggplot(sex_sexism_plot,
+       aes(x = wksexism_label,
+           fill = sex_label,
+           y = percent)) +
+  geom_bar(position = "dodge",
+           stat = "identity") +
+  labs(x = "Experienced Workplace Sexism",
+       fill = "Sex") +
+  scale_y_continuous(labels = scales::percent)
+
+```
+
+### Hypotheses
+
+The following are the hypotheses which I will test for this comparison.
+
+$$ H_0: \mu_{\tiny{male}} - \mu_{\tiny{female}} = 0 $$
+
+$$ H_1: \mu_{\tiny{male}} - \mu_{\tiny{female}} \neq 0 $$
+
+### Hypothesis Test
+
+For this hypothesis test, I will use an alpha level of 0.05. 
+
+```{r}
+
+sex_sexism_m <- sex_all |> 
+  filter(sex == 1)
+
+sex_sexism_f <- sex_all |> 
+  filter(sex == 0)
+
+mean_sex_sexism_m <- mean(sex_sexism_m$wksexism)
+mean_sex_sexism_f <- mean(sex_sexism_f$wksexism)
+
+sd_sex_sexism_m <- sd(sex_sexism_m$wksexism)
+sd_sex_sexism_f <- sd(sex_sexism_f$wksexism)
+
+n_sex_sexism_m <- nrow(sex_sexism_m)
+n_sex_sexism_f <- nrow(sex_sexism_f)
+
+zstat_sex_sexism <- abs(mean_sex_sexism_m - mean_sex_sexism_f) / sqrt((sd_sex_sexism_m  ^ 2 / n_sex_sexism_m) + (sd_sex_sexism_f ^ 2 / n_sex_sexism_f))
+
+pval_sex_sexism <- (1 - pnorm(zstat_sex_sexism)) * 2    # two-sided p-value
+
+```
+
+The mean percent of men who experienced workplace sexism is `{r} round((mean_sex_sexism_m*100),2)`%, while for women it is `{r} round((mean_sex_sexism_f*100),2)`%.
+
+The pvalue for this hypothesis test is `{r} round(pval_sex_sexism,4)`. Because this is below the alpha level of 0.05, we can reject the null hypothesis. This indicates that these two groups (female, male) were drawn from populations which experienced different amounts of workplace sexism.
+
+### Confidence Interval
+
+```{r}
+
+diff_sex_sexism <- mean_sex_sexism_m - mean_sex_sexism_f
+sediff_sex_sexism <- sqrt((sd_sex_sexism_m ^ 2/ n_sex_sexism_m) + (sd_sex_sexism_f ^ 2 / n_sex_sexism_f))
+
+lower_sex_sexism <- diff_sex_sexism - qnorm(1 - (.05 / 2)) * sediff_sex_sexism # get lower bound using 95% confidence
+upper_sex_sexism <- diff_sex_sexism + qnorm(1 - (.05 / 2)) * sediff_sex_sexism # get higher bound using 95% confidence
+```
+
+A 95% confidence interval for this comparison would be would be between `{r} round(lower_sex_sexism, 2)` and `{r} round(upper_sex_sexism, 2)`. Because 0 is not in the range, we can reject the null hypothesis ($H_0$).
+
+# Power Analysis
+
+## Part 1
+
+The first part of the power analysis exercise is to re-analyze the comparison between the hours to relax that men and women state they have during an average workday.
+
+I used an alpha level of 0.05 originally. If I want to determine how small of an effect size I can detect 90% of the time for these groups given this alpha level I can conduct a power analysis.
+
+```{r}
+
+pwr_sex_hrsrelax = pwr.2p2n.test(h = NULL, 
+                                 n1 = nrow(sex_relax_m),
+                                 n2 = nrow(sex_relax_f), 
+                                 sig.level = 0.05, 
+                                 power = .9) #two-sided by default
+
+```
+
+By doing so, we can analytically determine that 90% of the time we can detect a difference of `{r} round(pwr_sex_hrsrelax$h, 4)` or more with an alpha level of 0.05. This is a very small difference; in reality, a different this small wouldn't be as interesting. If we were conducting the survey ourselves, we might be willing to sample fewer individuals in order to save money which would mean we could also only detect larger, more meaningful differences.
+
+## Part 2
+
+The second part of the power analysis exercise is to estimate the sample size I would need for an imaginary experiment.
+
+The imaginary experiment would be the impact of a new drug on 1-year survival rates for a common cancer. For this analysis I would want a very low significance level of 0.001, as I would want to have an incredibly small chance of getting a false positive result (i.e., falsely claiming that the drug causes a difference in survival rates) as the risk of such a conclusion is immense. Because clinical trials are also very expensive, I would want to make sure that I am very likely to detect a different should it exist (i.e., prevent false negatives); because of that, I would want a power of .99. Finally, I would be happy to detect even a small change of 0.1 as any increase in survival odds would be very impactful, particularly at scale given that the cancer is common.
+
+```{r}
+
+imaginary_pwr = power.t.test(n = NULL, 
+                             sd = 1,
+                             delta = .1,
+                             sig.level = .001, 
+                             power = .99)
+
+```
+
+Based on the scenario above, I would need a sample size of `{r} round(imaginary_pwr$n,0)`. 
