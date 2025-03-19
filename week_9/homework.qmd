@@ -1,0 +1,215 @@
+---
+title: "Week 9 - Homework"
+format: 
+  html:
+    embed-resources: true
+editor: visual
+
+author: "David Gonzalez Chavez"
+
+execute:
+  echo: true
+  warning: false
+  message: false
+  freeze: auto
+---
+
+```{r}
+#| echo: false
+#| message: false
+#| warning: false
+
+library(tidyverse)
+library(gssr)
+
+
+theme_set(theme_light())
+
+```
+
+# Data
+
+The data for this homework assignment comes from the 2022 GSS.
+
+```{r}
+
+gss2022 <- gss_get_yr(year = 2022) |> # get 2022 GSS data
+  haven::zap_labels()                 # remove labels
+
+```
+
+# Analysis #1: Degree Attainment by Sex
+
+The first analysis will be between men and women. The analysis will be differences in their Graduate degree attainment.
+
+```{r}
+
+sex_degree_all <- gss2022 |> 
+  select(sex, degree) |> # select the sex variable and degree (comparison) variables
+  drop_na() |> 
+  mutate(sex_label = if_else(sex == 1, "Male", "Female")) |> 
+  mutate(sex = if_else(sex == 1, 1, 0)) |> 
+  mutate(grad_label = if_else(degree==4, "Graduate Degree", "No Graduate Degree")) |> 
+  mutate(grad = if_else(degree == 4, 1, 0)) # if degree is 4, they have graduate degree
+
+
+ggplot(sex_degree_all, 
+       aes(x = sex_label)) +
+  geom_bar() + 
+  xlab("Sex") + 
+  ylab("Count")
+
+sex_degree_plot <- sex_degree_all |>
+  group_by(sex_label, grad_label) |> # group by sex and degree status
+  summarize(n = n()) |> # get count with that combo
+  mutate(percent = n/sum(n)) # get percent of group for each subgroup
+
+ggplot(sex_degree_plot,
+       aes(x = grad_label,
+           fill = sex_label,
+           y = percent)) +
+  geom_bar(position = "dodge",
+           stat = "identity") +
+  labs(x = "Degree Attainment",
+       fill = "Sex") +
+  scale_y_continuous(labels = scales::percent)
+
+```
+
+## Difference in Probability Regression
+
+```{r}
+mod1_sex_degree <- glm(grad ~ sex,
+            data = sex_degree_all,
+            family = binomial(link = "identity"))
+
+summary(mod1_sex_degree)
+```
+
+## Risk Ratio Regression
+
+```{r}
+
+mod2_sex_degree <- glm(grad ~ sex,
+            data = sex_degree_all,
+            family = binomial(link = "log"))
+
+summary(mod2_sex_degree)
+
+```
+
+## Confidence Intervals
+
+```{r}
+
+sex_degree_m <- sex_degree_all |> 
+  filter(sex == 1)
+
+sex_degree_f <- sex_degree_all |> 
+  filter(sex == 0)
+
+mean_sex_degree_m <- mean(sex_degree_m$grad)
+mean_sex_degree_f <- mean(sex_degree_f$grad)
+
+sd_sex_degree_m <- sd(sex_degree_m$grad)
+sd_sex_degree_f <- sd(sex_degree_f$grad)
+
+n_sex_degree_m <- nrow(sex_degree_m)
+n_sex_degree_f <- nrow(sex_degree_f)
+
+diff_sex_degree <- mean_sex_degree_m - mean_sex_degree_f
+sediff_sex_degree <- sqrt((sd_sex_degree_m ^ 2/ n_sex_degree_m) + (sd_sex_degree_f ^ 2 / n_sex_degree_f))
+
+lower_sex_degree <- diff_sex_degree - qnorm(1 - (.05 / 2)) * sediff_sex_degree # get lower bound using 95% confidence
+upper_sex_degree <- diff_sex_degree + qnorm(1 - (.05 / 2)) * sediff_sex_degree # get higher bound using 95% confidence
+```
+
+A 95% confidence interval for this comparison would be would be between `{r} round(lower_sex_degree, 4)` and `{r} round(upper_sex_degree, 4)`. Because 0 is not in this range, we can reject the null hypothesis that there is no difference in mean graduate degree attainment between men and women. 
+
+# Analysis #2: 2020 Election by Sex
+
+The second analysis will also be between men and women. The analysis will be differences in whether they voted for Biden in 2020.
+
+```{r}
+
+sex_biden_all <- gss2022 |> 
+  select(sex, pres20) |> # pick sex and the pres20 question asking who they voted for in 2020 election
+  drop_na() |>  #get rid of n/a values
+  mutate(sex_label = if_else(sex == 1, "Male", "Female")) |> 
+  mutate(sex = if_else(sex == 1, 1, 0)) |> 
+  filter(pres20 != 4) |>  # removing people who did not vote; only interested in people who impacted election
+  mutate(vote = if_else(pres20 == 1, 1, 0)) |>  # make it binary: voted for biden or not
+  mutate(vote_label = if_else(pres20 == 1, "Biden", "Not Biden"))
+
+ggplot(sex_biden_all, 
+       aes(x = sex_label)) +
+  geom_bar() + 
+  xlab("Sex") + 
+  ylab("Count")
+
+sex_biden_plot <- sex_biden_all |>
+  group_by(sex_label, vote_label) |> # group by sex and degree status
+  summarize(n = n()) |> # get count with that combo
+  mutate(percent = n/sum(n)) # get percent of group for each subgroup
+
+ggplot(sex_biden_plot,
+       aes(x = vote_label,
+           fill = sex_label,
+           y = percent)) +
+  geom_bar(position = "dodge",
+           stat = "identity") +
+  labs(x = "Candidate Voted For in 2020 Election",
+       fill = "Sex") +
+  scale_y_continuous(labels = scales::percent)
+
+```
+
+## Difference in Probability Regression
+
+```{r}
+mod1_sex_biden <- glm(vote ~ sex,
+            data = sex_biden_all,
+            family = binomial(link = "identity"))
+
+summary(mod1_sex_biden)
+```
+
+## Risk Ratio Regression
+
+```{r}
+
+mod2_sex_biden <- glm(vote ~ sex,
+            data = sex_biden_all,
+            family = binomial(link = "log"))
+
+summary(mod2_sex_biden)
+
+```
+
+## Confidence Intervals
+
+```{r}
+
+sex_biden_m <- sex_biden_all |> 
+  filter(sex == 1)
+
+sex_biden_f <- sex_biden_all |> 
+  filter(sex == 0)
+
+mean_sex_biden_m <- mean(sex_biden_m$vote)
+mean_sex_biden_f <- mean(sex_biden_f$vote)
+
+sd_sex_biden_m <- sd(sex_biden_m$vote)
+sd_sex_biden_f <- sd(sex_biden_f$vote)
+
+n_sex_biden_m <- nrow(sex_biden_m)
+n_sex_biden_f <- nrow(sex_biden_f)
+
+diff_sex_biden <- mean_sex_biden_m - mean_sex_biden_f
+sediff_sex_biden <- sqrt((sd_sex_biden_m ^ 2/ n_sex_biden_m) + (sd_sex_biden_f ^ 2 / n_sex_biden_f))
+
+lower_sex_biden <- diff_sex_biden - qnorm(1 - (.05 / 2)) * sediff_sex_biden # get lower bound using 95% confidence
+upper_sex_biden <- diff_sex_biden + qnorm(1 - (.05 / 2)) * sediff_sex_biden # get higher bound using 95% confidence
+```
+
+A 95% confidence interval for this comparison would be would be between `{r} round(lower_sex_biden, 4)` and `{r} round(upper_sex_biden, 4)`. Because 0 is not in this range, we can reject the null hypothesis that there is no difference in the mean percentage of votes towards Biden between men and women.
