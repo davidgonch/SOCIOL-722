@@ -86,6 +86,8 @@ mod1_sex_degree <- glm(grad ~ sex,
 summary(mod1_sex_degree)
 ```
 
+The difference in probabilities regression suggests that men are `{r} abs(round(summary(mod1_sex_degree)$coefficients[2],4))*100` percentage points less likely to have a graduate degree than women. The p-value for this estimate is less than our alpha level of .05, therefore we can reject the null hypothesis (no difference in probability).
+
 ## Risk Ratio Regression
 
 ```{r}
@@ -96,7 +98,12 @@ mod2_sex_degree <- glm(grad ~ sex,
 
 summary(mod2_sex_degree)
 
+exp(summary(mod2_sex_degree)$coefficients[2])
+
 ```
+
+The risk ratio regression suggests that men are `{r} exp(summary(mod2_sex_degree)$coefficients[2])*100` percent as likely to have a graduate degree than women. The p-value for this estimate is less than our alpha level of .05, therefore we can reject the null hypothesis (no difference in risk).
+
 
 ## Confidence Intervals
 
@@ -174,6 +181,8 @@ mod1_sex_biden <- glm(vote ~ sex,
 summary(mod1_sex_biden)
 ```
 
+The difference in probabilities regression suggests that men are `{r} abs(round(summary(mod1_sex_biden)$coefficients[2],4))*100` percentage points less likely to have voted for Biden than women. The p-value for this estimate is less than our alpha level of .05, therefore we can reject the null hypothesis (no difference in probability).
+
 ## Risk Ratio Regression
 
 ```{r}
@@ -184,7 +193,11 @@ mod2_sex_biden <- glm(vote ~ sex,
 
 summary(mod2_sex_biden)
 
+exp(summary(mod2_sex_biden)$coefficients[2])
+
 ```
+
+The risk ratio regression suggests that men are `{r} round(exp(summary(mod2_sex_biden)$coefficients[2]),4)*100` percent as likely to have vote for Biden compared to women. The p-value for this estimate is less than our alpha level of .05, therefore we can reject the null hypothesis (no difference in risk).
 
 ## Confidence Intervals
 

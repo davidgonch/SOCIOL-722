@@ -1,0 +1,2364 @@
+---
+title: "Soc 722"
+author: "Stephen Vaisey"
+subtitle: "Spring 2025"
+execute: 
+  echo: true
+  warning: false
+  freeze: auto
+  cache: false
+format: 
+  revealjs:
+    theme: [default, inverse.scss, custom.scss]
+    slide-number: true
+    embed-resources: true
+editor: source
+revealjs-plugins:
+  - revealjs-text-resizer
+editor_options: 
+  chunk_output_type: console
+---
+
+# Introduction {.inverse}
+
+## Objective
+
+This is the first in a two-course sequence designed to help you become competent quantitative researchers in sociology.
+
+This includes learning proper **decision making**, **explanation**, **computation**, **visualization**, and **interpretation**.
+
+## Schedule
+
+We will normally meet Tuesdays. Please note that we will be meeting on the following **Thursdays** (not Tuesdays) because of my travel schedule:
+
+- today
+- January 30
+- February 6
+- February 13
+- March 20
+
+## Final exam
+
+The exam will be **remote** on April 30 from 9am-12pm.
+
+## Syllabus
+
+The syllabus is [here](https://docs.google.com/document/d/1SnKMREAejFdr-MpejuxieZ3nPz7ftdHDoWiRv2aRtQc/edit?usp=sharing). Please be sure to read it.
+
+## Packages needed
+
+You will need the following packages to run everything in this course.
+
+```{r}
+#| include: false
+#| execute: false
+
+# install.packages(c("gapminder",
+#                    "tidyverse",
+#                    "tinytable",
+#                    "venn",
+#                    "here",
+#                  dependencies = TRUE)
+# 
+# install.packages('gssr', repos =
+#   c('https://kjhealy.r-universe.dev', 'https://cloud.r-project.org'))
+
+```
+
+
+##
+
+:::{.r-fit-text .absolute top="20%"}
+Questions?
+:::
+
+# Data and Variables {.inverse}
+
+## Data structure
+
+```{r}
+#| echo: false
+#| message: false
+#| warning: false
+
+library(tidyverse)
+library(gapminder)
+library(tinytable)
+library(here)
+
+theme_set(theme_light())
+
+options(pillar.width = 70)  # having some trouble with glimpse overflow
+```
+
+```{r}
+#| echo: false
+data(gapminder)
+head(gapminder, n = 10) |> 
+  tt() |> 
+  style_tt(fontsize = .6)
+```
+
+Tidy format: columns contain **variables**, each row is an **observation**.
+
+## Untidy data
+
+```{r}
+#| echo: false
+
+untidy <- gapminder |> 
+  pivot_wider(values_from = c(lifeExp, pop, gdpPercap),
+              names_from = year)
+
+head(untidy, n = 12) |> 
+  tt() |> 
+  style_tt(fontsize = .6)
+```
+
+
+## Types of variables
+
+|              |                                    |
+|--------------|------------------------------------|
+| **Ratio**    | dollars; points (e.g., basketball) |
+| **Interval** | degrees Celsius                    |
+| **Ordinal**  | clothing sizes; Likert scales      |
+| **Nominal**  | race; sex; country                 |
+
+: {.striped}
+
+The first two types are **continuous** or **numeric**. The second two types are **categorical**. Ordinal variables are often treated as numeric and this is usually fine.
+
+## 
+
+Let's investigate this using the `gapminder` data. First of all, we'll keep only the most recent (2007) data.
+
+```{r}
+d <- gapminder |>               
+  filter(year == max(year)) |> # keep 2007
+  select(-year)                # don't need column
+```
+
+## 
+
+```{r}
+#| echo: false
+
+head(d, n = 10) |> 
+  tt() |> 
+  style_tt(fontsize = .7)
+```
+
+What kinds of variables are these?
+
+## The origins of "statistics"
+
+The word _statistics_ comes from the fact that it was information about _the state_. We'll focus on information like this for now rather than thinking about samples of individuals.
+
+## Visualization basics
+
+Consider two types of plots
+
+- univariate plots
+
+- bivariate plots
+
+These are also types of **distributions.**
+
+## Univariate plots
+
+## Density plot
+
+```{r}
+#| output-location: slide
+
+ggplot(d,
+       aes(x = gdpPercap)) +
+  geom_density()
+```
+
+## Histogram (1)
+
+```{r}
+#| output-location: slide
+
+ggplot(d,
+       aes(x = gdpPercap)) +
+  geom_histogram(binwidth = 5000,
+                 boundary = 0,
+                 color = "white")
+```
+
+## Histogram (2)
+
+```{r}
+#| output-location: slide
+
+ggplot(d,
+       aes(x = lifeExp)) +
+  geom_histogram(binwidth = 5,
+                 boundary = 0,
+                 color = "white")
+```
+
+## Bar graph (univariate)
+
+```{r}
+#| output-location: slide
+
+ggplot(d,
+       aes(x = continent)) +
+  geom_bar()
+```
+
+## Bivariate plots
+
+## Scatter plot
+
+```{r}
+#| output-location: slide
+
+ggplot(d,
+       aes(x = gdpPercap,
+           y = lifeExp)) +
+         geom_point()
+```
+
+## Bar graph (bivariate)
+
+```{r}
+#| output-location: slide
+
+d |> 
+  group_by(continent) |> 
+  summarize(GDP = mean(gdpPercap)) |>
+  ggplot(aes(x = continent,
+             y = GDP)) +
+  geom_bar(stat = "identity")
+```
+
+## Strip plot
+
+```{r}
+#| output-location: slide
+
+ggplot(d,
+       aes(x = gdpPercap,
+           y = continent)) +
+  geom_point(alpha = .3)
+```
+
+## Jittered strip plot
+
+```{r}
+#| output-location: slide
+
+ggplot(d,
+       aes(x = gdpPercap,
+           y = continent)) +
+  geom_jitter(height = .1,
+              width = .1,
+              alpha = .2)
+```
+
+## Time plots (bivariate)
+
+Let's go back to the full data and look at trends in Oceania.
+
+```{r}
+#| output-location: slide
+
+gapminder |> 
+  filter(continent == "Oceania") |> 
+  ggplot(aes(x = year,
+             y = lifeExp,
+             group = country,
+             color = country)) +
+  geom_line()
+```
+
+## {#slide-yt1-id data-menu-title="Your turn"}
+
+:::{.r-fit-text .absolute top="20%"}
+Your turn!
+:::
+
+## Homework
+
+1. Set up a public GitHub repository for this class
+2. Share it with the class on Slack
+3. Create a Quarto document (`HW1.qmd`) making several visualizations using data of your choice
+4. Render it to html (`HW1.html`)
+5. Push it to your repository by midnight before the next meeting
+
+# Surveys, samples, and probability {.inverse}
+
+## Populations and samples
+
+Studying **populations** is nice:
+
+- all countries in the world
+- all states in the US
+- all cities in a state
+
+However, we cannot study (say) all adults in a country. So we usually work with **samples**. This raises the issue of using _samples_ to make inferences about _populations_.
+
+## Simple random sampling
+
+Sampling where every eligible case has an equal probability of selection. 
+
+:::: columns
+
+:::{.column width="50%}
+
+![](images/sampling-balls.jpg)
+:::
+
+:::{.column width="50%}
+::: callout-note
+In real-life surveys, simple random sampling is pretty uncommon. But it's important as a baseline!
+:::
+:::
+
+::::
+
+## Simulations
+
+We can use **simulations** to build intuition about sampling.
+
+A _simulation_ is when we make up "true data", hide it from ourselves, and see how well we can figure out the the truth using some procedure.
+
+## Simple survey
+
+Imagine a city of 100,000 adults. Of these, 70,000 (i.e., 70%) have at least one child.
+
+How close could we get to this number by drawing different random samples?
+
+## A first simulation
+
+Let's set up the "true" population:
+
+```{r}
+population <- tibble(id = 1:1e5) |> # initialize with 100K rows
+  mutate(parent = if_else(id <= 70000, "Yes", "No"))  # first 70K "yes"
+```
+
+This simple code makes the first 70,000 rows "yes" and the next 30,000 "no." We now know the "truth", which we can use for comparison.
+
+## Visualizing the population
+
+```{r}
+#| echo: false
+
+ggplot(population,
+       aes(x = parent)) +
+  geom_bar()
+```
+
+## Data types
+
+Because of the way we created it, `parent` will be a character `<chr>` variable. We often use `1` to mean "yes" and `0` to mean "no" in statistics. We could add a numeric version of `parent` as follows.
+
+```{r}
+population <- population |> 
+  mutate(parent_num = if_else(parent == "Yes", 1L, 0L))
+```
+
+:::{.absolute top="65%"}
+::: callout-tip
+Assigning an object to its "old" name allows you to add things to the original object. In this case, we are adding a new column, `parent_num`.
+:::
+:::
+
+## Checking data type 
+
+We can use `glimpse()` to easily see what type of variable things are.
+
+```{r}
+glimpse(population)
+```
+
+:::{.absolute top="65%"}
+::: callout-tip
+`glimpse()` is very useful. It shows you your data "sideways" so you can see information about all the columns (which are shown as rows).
+:::
+:::
+
+## Implications of data type
+
+Data type affects what we can do to a variable (or column). For example, we can take the mean (average) of a set of _numbers_ but we can't take the mean of a set of _characters_.
+
+:::: columns
+
+:::{.column width="55%"}
+```{r}
+#| error: true
+
+population |>
+  summarize(mean1 = mean(parent),
+            mean2 = mean(parent_num))
+```
+:::
+
+:::{.column width="45%"}
+::: callout-note
+In R, `NA` stands for "not available" and means that the data are _missing_. This cell is missing because what we asked for couldn't be calculated.
+:::
+:::
+
+::::
+
+## Aside: doing stuff to a variable {.incremental}
+
+We can pick out a column to operate on in two ways:
+
+:::: columns
+
+:::{.column width="50%"}
+### tidyverse
+
+```{r}
+population |> 
+  pull(parent_num) |> 
+  mean()
+```
+:::
+
+:::{.column width="50%"}
+### base R
+
+```{r}
+mean(population$parent_num)
+```
+:::
+
+::::
+
+[Now back to our story...]{.absolute top="70%" left="30%"}
+
+
+## Parameters and statistics
+
+In our city, 70% is the **population parameter** because exactly 70,000 out of 100,000 people actually have at least one child.
+
+We can't afford to ask everyone, though. So what if we asked, say, 1000 randomly selected adults. Then we could compute the proportion of the _sample_ that has a child. This would be a **sample statistic**. We use _sample statistics_ to **make inferences** about _population parameters_.
+
+## Drawing a sample
+
+```{r}
+set.seed(722)
+my_sample <- population |> 
+  slice_sample(n = 1000,
+               replace = FALSE)
+```
+
+Sampling is a _random_ process. We will get a different result every time. By using `set.seed()`, we ensure we get the same "random" result every time the code is run.
+
+:::{.absolute top="65%"}
+::: callout-note
+Sampling theory is based on sampling _with replacement_. However, to make it more straightforward, we will use sampling _without replacement_ here.
+:::
+:::
+
+## The sample statistic
+
+To estimate the _population proportion_, we will use the _sample proportion_.
+
+```{r}
+my_sample |> 
+  group_by(parent) |> 
+  summarize(n = n())
+```
+
+In our sample, 682 people are parents. This is 68.2%, which isn't _exactly_ the 70% in the population. This is because we randomly sampled from our population. It could be higher or lower.
+
+## Repeating the experiment
+
+In real life, we only get to sample _once_. Sampling is expensive! But since this is just a simulation, we can ask what would happen if we sampled 1000 people many, many times.
+
+## A custom function
+
+We can first make a **function** that does what we want _once_. This is hard at first but usually pays off.
+
+```{r}
+get_count <- function(n = 1000) {       # default n = 1000
+  slice_sample(population, n = n) |>    # take a sample
+    summarize(sum = sum(parent_num)) |> # count the parents
+    as.integer()                        # save the number
+}
+```
+
+:::{.absolute top="65%"}
+::: callout-tip
+If you run all the code up to here, you can call `get_count()` interactively in the console many times to get a feel for it.
+:::
+:::
+
+## Iterating
+
+This would seem to make sense, but it doesn't work.
+
+```{r}
+set.seed(722)
+my_bad_samples <- tibble(
+  sample_id = 1:100,
+  samp_count = get_count(n = 1000))
+head(my_bad_samples)
+```
+
+## Iterating with `rowwise()`
+
+```{r}
+set.seed(722)
+my_samples <- tibble(
+  sample_id = 1:100) |> 
+  rowwise() |> 
+  mutate(samp_count = get_count(n = 1000))
+head(my_samples, n = 3)
+```
+
+:::{.absolute top="70%" width="100%"}
+::: callout-tip
+I don't _need_ `n = 1000` because I set it as the default when I made my function.
+:::
+:::
+
+## Plotting the results
+
+```{r}
+#| output-location: slide
+#| fig-height: 5
+
+ggplot(my_samples,
+       aes(x = samp_count)) +
+  geom_histogram(aes(y = after_stat(density)), # for overlay
+                 boundary = 697.5,     # why would I choose this?
+                 binwidth = 5,         # somewhat arbitrary
+                 color = "white",
+                 fill = "gray") +
+  geom_density(color = "#36454f",      # overlay density
+               linewidth = 1,
+               alpha = .5)      
+```
+
+## Repeating with 2,500 samples
+
+```{r}
+#| echo: false
+#| cache: true
+#| fig-align: center
+#| fig-height: 5
+
+set.seed(722)
+my_many_samples <- tibble(
+  sample_id = 1:2500) |> 
+  rowwise() |> 
+  mutate(samp_count = get_count())
+
+ggplot(my_many_samples,
+            aes(x = samp_count)) +
+  geom_histogram(aes(y = after_stat(density)),
+                 boundary = 697.5,  # why would I choose this?
+                 binwidth = 5,      # somewhat arbitrary
+                 color = "white",
+                 fill = "gray") +
+  scale_x_continuous(breaks = seq(600, 800, 10)) +
+  geom_density(color = "#36454f",    # overlay density
+               linewidth = 1,
+               alpha = .5)    
+```
+
+## Sample size and number of samples
+
+When we are doing simulations like this, it can be easy to confuse the **sample size** (1000) with the **number of samples** in our simulation (2500). They are not the same thing!
+
+The _sample size_ is the number of people we would survey "in the real world".
+
+The _number of samples_ is how many times we want to run our simulated experiment.
+
+## How accurate are we?
+
+We will do this formally later. But now we can quantify how accurately a _sample proportion_ of 1000 people might estimate this _population proportion_ by using the **interquartile range**. This is how wide the middle half of the data is.
+
+```{r}
+my_many_samples |> pull(samp_count) |> quantile(c(.25, .75))
+my_many_samples |> pull(samp_count) |> IQR()
+```
+
+::: callout-tip
+## Reminder
+Remember: in real life we only get _one_ of these samples. 
+:::
+
+## Visualizing IQR
+
+```{r}
+#| echo: false
+
+ggplot(my_many_samples,
+            aes(x = samp_count)) +
+  geom_density(fill = "gray",
+               color = NA) +
+  scale_x_continuous(breaks = seq(600, 800, 10)) + 
+  geom_vline(xintercept = quantile(my_many_samples$samp_count,
+                                   c(.25, .75)),
+             color = "#CC0000")
+
+```
+
+## Sample size
+
+Remember that we drew a sample of 1000 people to estimate our _sample proportions_. What if we had different sample sizes? Let's compare the following:
+
+- $n$ = 60
+- $n$ = 250
+- $n$ = 1000
+
+## Visualizing "accuracy"
+
+```{r}
+#| echo: false
+#| fig-align: center
+
+set.seed(722)
+my_n60_samples <- tibble(
+  sample_id = 1:2500,
+  sample_size = "n = 60") |> 
+  rowwise() |> 
+  mutate(samp_count = get_count(n = 60),
+         samp_prop = samp_count / 60)     # proportion
+
+my_n250_samples <- tibble(
+  sample_id = 1:2500,
+  sample_size = "n = 250") |> 
+  rowwise() |> 
+  mutate(samp_count = get_count(n = 250),
+         samp_prop = samp_count / 250)
+
+my_many_samples <- my_many_samples |> # adding the group var and prop
+  mutate(sample_size = "n = 1000",
+         samp_prop = samp_count / 1000)
+
+samp_size_compare <- 
+  bind_rows(my_n60_samples,
+            my_n250_samples,
+            my_many_samples)
+
+ggplot(samp_size_compare,
+       aes(x = samp_prop,
+           group = sample_size,
+           color = sample_size)) +
+  geom_density()
+```
+
+::: callout-tip
+## Proportions
+The x-axis is now _proportion_ because we can no longer compare raw counts.
+:::
+
+## Comparing IQR
+
+The interquartile ranges (i.e., widths of the middle half of the data) decrease a lot with sample size.
+
+:::: columns
+
+:::{.column width="35%"}
+```{r}
+#| echo: false
+
+samp_size_compare |>              
+  group_by(sample_size) |>        
+  summarize(IQR = IQR(samp_prop))
+```
+:::
+
+:::{.column width="65%"}
+:::{.callout-warning}
+We will explore these issues more formally very soon using the concepts **sampling distribution** and **standard error**. For now, the goal is to understand how to use simulations to build qualitative intuition about sample size.
+:::
+:::
+
+::::
+
+## Thinking with real data: GSS
+
+The General Social Survey is a **repeated cross-sectional** survey that has been fielded every year or other year since 1972. It is the "Hubble Telescope" of sociology!
+
+## Accessing the GSS in R
+
+Install Kieran Healy's `gssr` package using the code below. You only have to do this once.
+
+```{r}
+#| eval: false
+
+# Install 'gssr' from 'ropensci' universe
+install.packages('gssr', repos =
+  c('https://kjhealy.r-universe.dev', 'https://cloud.r-project.org'))
+
+# Also recommended: install 'gssrdoc' as well
+install.packages('gssrdoc', repos =
+  c('https://kjhealy.r-universe.dev', 'https://cloud.r-project.org'))
+```
+
+## Getting the 2022 survey
+
+```{r}
+#| execute: false
+
+library(gssr)
+
+gss2022 <- gss_get_yr(year = 2022) |> # get 2022
+  haven::zap_labels()                 # remove Stata value labels
+```
+
+```{r}
+#| echo: false
+gss2022 <- readRDS(here("data", "gss2022.RDS"))
+glimpse(gss2022)
+```
+
+:::note
+The first doesn't actually run so that I don't redownload the data every time. The hidden block loads the data from memory.
+:::
+
+## Introducing `abany`
+
+The GSS `abany` item asks "Please tell me whether or not you think it should be possible for a pregnant woman to obtain a legal abortion if the woman wants it for any reason?" The answers are "yes" (`1`) and "no" (`2`).
+
+There is also a web version of this in 2022: `abanyng`. We will drop this for now.
+
+:::{.absolute top="65%"}
+::: callout-warning
+We do not want variables coded `1` and `2`. As we will see later, it's better if (almost) all variables have a meaningful `0` value.
+:::
+:::
+
+## Wrangling `abany`
+
+:::: columns
+
+:::{.column width="43%"}
+
+```{r}
+d <- gss2022 |> 
+  select(abany) 
+
+d |> group_by(abany) |> 
+  summarize(n = n())
+```
+:::
+
+:::{.column width="57%"}
+```{r}
+d <- d |> 
+  drop_na() |>   # drop NA values
+  mutate(abany = case_match(abany,
+                            1 ~ 1,
+                            2 ~ 0 ))
+
+d |> pull(abany) |> table()
+```
+:::
+
+::::
+
+:::{.absolute top="70%" width="100%"}
+::: callout-tip
+`case_match()` is useful for recoding variables.
+:::
+:::
+
+## `abany` sample proportion
+
+We can use `mean()` to calculate the _sample proportion_.
+
+```{r}
+mean(d$abany)
+```
+
+We find that `r round(mean(d$abany), 3)*100`% of our sample supports abortion rights for any reason.
+
+## Inference
+
+How close is this _sample statistic_ to the _population parameter_? We'll never know. 
+
+We can use a simulation to give us a sense of what kind of accuracy is possible with a sample of `r nrow(d)` respondents.
+
+## Random number functions
+
+We could build an imaginary US adult population where 59.4% of adults support abortion rights. But we can instead use **random number functions** to draw a sample from an _infinite_ population instead.
+
+```{r}
+set.seed(722)
+rbinom(n = 1345, size = 1, prob = .594) |> # sample from inf. pop.
+  mean()                                   # take the mean
+```
+
+::: callout-tip
+## Why 59.4%?
+Why assume that the population parameter is .594? Because we are interested in how _widely spread_ the simulations are and there isn't a more reasonable value to choose.
+:::
+
+## Taking many samples (again)
+
+Let's do this 5000 times and collect the results.
+
+```{r}
+set.seed(722)
+gss_sims <- tibble(
+  sim_id = 1:5000) |> 
+  rowwise() |> 
+  mutate(samp_prop = mean(rbinom(1345, 1, .594)))
+```
+
+The IQR tells us how spread out the middle half of the estimates are.
+
+```{r}
+gss_sims |> pull(samp_prop) |> IQR()
+```
+
+Thus, with 1345 cases, half of the sample proportions will be within approximately 1.9 points of the true value.
+
+## Visualize
+
+```{r}
+#| echo: false
+
+ggplot(gss_sims,
+       aes(x = samp_prop)) +
+  geom_density(fill = "gray",
+               color = NA) +
+  scale_x_continuous(breaks = seq(.50, .70, .01)) + 
+  geom_vline(xintercept = quantile(gss_sims$samp_prop,
+                                   c(.025, .25, .75, .975)),
+             color = "#CC0000") +
+  labs(caption = "lines at 2.5th, 25th, 75th, and 97.5th percentiles")
+```
+
+## Summary
+
+We still don't know the true value, of course. We are _probably_ within a couple of points of the true value. But we could be 3 (or _possibly_ more) points away.
+
+![](images/never-certain.jpg){fig-align="center"}
+
+## Recap
+
+- we want to know about **populations**
+- we end up having to use **samples** 
+- samples are _random_ subsets of the population that are expensive to collect
+- the larger the sample, the more accurately we can **infer** the population proportion
+- we can use **simulations** to understand how this works.
+
+## Homework
+
+- make a fake population of at least 100,000 inhabitants _OR_ use random number functions
+- make some people do/think/believe/are X (`1`) and some people not-X (`0`)
+- write a function that samples from that population using 3 or more different sample sizes 
+- plot and interpret your results
+- push it to GitHub the night before the next lecture
+
+Message me on Slack if you are struggling!
+
+# Probability {.inverse}
+
+## From simulations to laws
+
+We saw two things in the simulations:
+
+1. As the _number of simulations_ gets bigger, the clearer the pattern we observe
+
+2. The pattern we see is a _symmetrical distribution_ centered on the "true" value
+
+::: fragment
+This relates to two rules that are important in statistics.
+:::
+
+## Law of Large Numbers
+
+The average of the results (e.g., means) obtained from a large number of independent random samples converges to the true value as the number of samples increases.
+
+::: fragment
+This applies to a single large sample or to the sum of many smaller samples (as we did with the simulations).
+:::
+
+::: fragment
+This only works because each observation (e.g., person) is _randomly sampled_.
+:::
+
+## Law of Large Numbers
+
+```{r}
+#| echo: false
+
+set.seed(7)
+lln_demo <- tibble(
+  samp_num = 1:10000,
+  x = rbinom(10000, 1, .594),
+  cp = cummean(x)
+)
+
+ggplot(lln_demo,
+       aes(x = samp_num,
+           y = cp)) +
+  geom_line(color="#CC0000") +
+  geom_hline(yintercept = .594,
+             linetype = "dotted") +
+  labs(x = "",
+       y = "Cumulative Proportion")
+```
+
+:::{.fragment .absolute style="top: 40%; left: 50%; width: 40%; font-size: 70%;"}
+The observed value _eventually_ converges to .594. It's still not perfect here!
+:::
+
+## Central limit theorem
+
+In the long run, the distribution of averages of _any_ distribution converges to the **normal distribution**.
+
+:::{.absolute top="65%"}
+::: callout-note
+The _normal distribution_ is that "bell-shaped" distribution you saw last time. We will define it more formally later on.
+:::
+:::
+
+## CLT demo
+
+It doesn't matter what the shape of the empirical distribution is. Repeated estimates of its mean will form a normal distribution.
+
+```{r}
+#| output-location: slide
+
+tvdata <- gss2022 |> 
+  select(tvhours) |> 
+  drop_na()
+
+ggplot(tvdata,
+       aes(x = tvhours)) +
+  geom_bar(fill = "gray")
+```
+
+## Distribution of sampled means
+
+```{r}
+#| output-location: slide
+#| cache: true
+
+# get sampling function
+get_tv_mean <- function() {
+  slice_sample(tvdata, 
+               n = nrow(tvdata),  # sample size = data size
+               replace = TRUE) |> # replacement
+    pull(tvhours) |> 
+    mean()
+}
+
+# draw samples
+set.seed(722)
+tv_samples <- tibble(
+  samp_id = 1:5000) |> 
+  rowwise() |> 
+  mutate(samp_mean = get_tv_mean())
+
+# plot
+ggplot(tv_samples,
+       aes(x = samp_mean)) +
+  geom_histogram(fill = "gray",
+                 color = "white",
+                 binwidth = .025)
+
+```
+
+## Summary
+
+We will return to this. For now, it's important to remember:
+
+1. The **Law of Large Numbers** states that repeated _random_ observations will converge to the true value;
+
+2. The **Central Limit Theorem** states that estimates (e.g., means) from repeated _random_ samples will form a normal distribution regardless of the data distribution.
+
+:::callout-warning
+Non-random samples, no matter how large, will _not_ converge to the true population value!
+:::
+
+## Putting this into practice
+
+We aren't totally ready for this (and we'll come back) but here's why this matters. If we have a "large enough" sample (just one, real-life sample), we can use that to estimate the uncertainty of the sampling process. 
+
+:::fragment
+For example, if we had a sample of 400, 70% of whom are parents, we could say that, if we repeated our experiment infinite times, 95% of the estimated sample proportions would be between .655 and .745.
+:::
+
+:::fragment
+The formula for this is $\hat{p} \pm 1.96 \times \sqrt{\hat{p}(1-\hat{p}) / n}$. But don't worry about that for now!
+:::
+
+## Probability basics
+
+To really get this, we need **probability**. We haven't defined it formally, but we've been using it in this course. 
+
+For example, when we defined a population of 100,000, exactly 70,000 of whom were parents, and sampled them _at random_, we made it so each "draw" had a _probability_ of .7 of being a parent.
+
+:::{.callout-note .absolute style="top: 65%;"}
+Technically this isn't true unless we do sampling _with_ replacement. Otherwise the probability would change slightly with each draw.
+:::
+
+## Probability of an event
+
+Let's return to the abortion rights example. In the 2022 GSS, there are two possibilities: support abortion rights, $S$, or oppose abortion rights, $O$. These are **complementary events**, so $O = \neg S$. 
+
+:::fragment
+Together, these represent the **event space**, or the set of things that can happen in one **event** (sampling a person). We can write $\Omega = \{S, \neg S\}$. These are _mutually exclusive_ events.
+:::
+
+::: fragment
+Since 59.4% of sample respondents support, we can say $P(S) = .594$ and $P(\neg S) = .406$. $P(x)$ or $Pr(x)$ means "the probability of $x$."
+:::
+
+## Probability of two events
+
+If $P(S) = .594$, what is the probability of sampling two people in a row who both support abortion rights?
+
+:::fragment
+These events are **independent** so the probability is $.594 \times .594 \approx .353$. _Independent_ here means that the result of the each draw has _no effect_ on the value of other draws.
+:::
+
+## Multiple attributes
+
+Let's look at a dataset with multiple variables per respondent. Let's consider whether each respondent is "very happy" and whether the respondent has a college degree. To do this, we'll need to do some wrangling.
+
+```{r}
+d <- gss2022 |> 
+  select(happy, educ) |> 
+  drop_na() |> 
+  mutate(vhappy = if_else(happy == 1, 
+                          "Very happy", 
+                          "Not very" ),
+         college = if_else(educ >= 16, 
+                           "College", 
+                           "Not college")) |> 
+  select(vhappy, college)
+```
+
+## Contingency table
+
+```{r}
+#| echo: false
+library(tinytable)
+
+ct <- d |>
+  group_by(vhappy, college) |> 
+  tally() |> 
+  pivot_wider(names_from = vhappy, values_from = n)
+
+tt(ct)
+```
+
+This isn't very "tidy" but we can wrangle this into a 2x2 table of counts of these variables. This is called a **contingency table**.
+
+## Marginal probability
+
+```{r}
+#| echo: false
+
+tt(ct)
+```
+
+The **marginal probability** is the probability of an event related to one variable _without regard_ for the the other variable.
+
+[So what is the _marginal probability_ of having a college degree, $P(\text{College})$?]{.fragment} [What is the _marginal probability_ of being very happy, $P(\text{Very happy})$?]{.fragment}
+
+## Joint probability
+
+```{r}
+#| echo: false
+
+tt(ct)
+```
+
+The **joint probability** is the probably of two events happening at the same time. 
+
+[What is the _joint probability_ of having a college degree **and** being very happy, $P(\text{College} \cap \text{Very happy})$?]{.fragment}
+
+## Joint probability visualized
+
+```{r}
+#| echo: false
+
+library(venn)
+
+d_num <- gss2022 |> 
+  select(happy, educ) |> 
+  drop_na() |> 
+  mutate(vhappy = if_else(happy == 1, 
+                          1L, 
+                          0L ),
+         college = if_else(educ >= 16, 
+                          1L, 
+                          0L)) |> 
+  select(vhappy, college)
+
+venn(d_num, ggplot = TRUE, ilabels = "counts")
+
+```
+
+## Product of marginal probabilities
+
+Why isn't the _joint probability_ here (`r round(mean(d_num$college * d_num$vhappy), 3)`) the same as the product of the _marginal probabilities_ (`r round(mean(d_num$vhappy) * mean(d_num$college), 3)`)?
+
+:::fragment
+What would it mean if this were true? (It's not.)
+
+$$P(\text{College}) \times P(\text{Very happy}) = \\ P(\text{College} \cap \text{Very happy})$$
+:::
+
+:::fragment
+It would mean that the two variables were _independent_, i.e., that knowing one tells you nothing about the other.
+:::
+
+## Conditional probability
+
+The final type we'll learn is **conditional probability**. This is the probability of a specific outcome _conditional_ on the value of another variable.
+
+## Conditional example (1)
+
+What is the probability of being very happy _conditional_ on having a college degree?
+
+```{r}
+#| echo: false
+
+tt(ct) |> 
+  style_tt(
+    i = 1,
+    background = "yellow") |> 
+  style_tt(
+    i = 2,
+    color = "lightgray"
+  )
+```
+
+:::fragment
+$P(\text{VH} | \text{C}) =$ `r round(mean(d_num$vhappy[d_num$college==1]), 3)`
+:::
+
+## Conditional example (2)
+
+What is the probability of being very happy _conditional_ on NOT having a college degree?
+
+```{r}
+#| echo: false
+
+tt(ct) |> 
+  style_tt(
+    i = 1,
+    color = "lightgray") |> 
+  style_tt(
+    i = 2,
+    background = "yellow"
+  )
+```
+
+:::fragment
+$P(\text{VH} | \neg \text{C}) =$ `r round(mean(d_num$vhappy[d_num$college==0]), 3)`
+
+If these conditional probabilities were the same, the two variables would be _independent_.
+:::
+
+## Conditional probability visualized
+
+```{r}
+#| echo: false
+
+cp <- d_num |> 
+  group_by(college) |> 
+  summarize(cp = mean(vhappy))
+
+ggplot(cp,
+       aes(
+         x = factor(college, labels = c("No college",
+                                        "College")),
+         y = cp)) +
+  geom_bar(stat = "identity",
+           color = "gray",
+           fill = "gray") +
+  labs(x = "",
+       y = "P(Very happy)",
+       title = "Very happy by level of education",
+       caption = "2022 US General Social Survey") +
+  theme_light()
+
+```
+
+## Summary
+
+This is a very basic introduction to probability. We will build on it but it's important to understand the fundamentals of _marginal_, _joint_, and _conditional_ probability. 
+
+## Homework
+
+1. Create two different two-by-two tables, at least one of which is from the GSS. Make sure to use `drop_na()` to exclude missing data for now.
+
+2. Compute and interpret all the marginal, joint, and conditional probabilities for each table.
+
+
+# Univariate statistics {.inverse}
+
+## Descriptive statistics
+
+We will distinguish between descriptive statistics for three different variable types:
+
+1. Continuous (interval, ratio, and some ordinal variables)
+
+2. Binary
+
+3. Multinomial or categorical (nominal and some ordinal)
+
+## The right data
+
+Let's get a few variables to work with.
+
+```{r}
+d <- gss2022 |>
+  select(wordsum,      # continuous
+         age,          # continuous
+         educ,         # continuous (make binary/ordinal)
+         marital) |>   # nominal
+  drop_na() |> 
+  mutate(marital_chr = case_match(marital,
+                                  1 ~ "married",
+                                  2 ~ "widowed",
+                                  c(3,4) ~ "sep. or div.",
+                                  5 ~ "never mar."))
+```
+
+:::callout-note
+Deleting cases with any missing data is sometimes OK, but there are often better ways to handle it. We will address this (much) later!
+:::
+
+## Continuous: `wordsum`
+
+How many of the following words can you correctly define (picking the closest synonym via multiple choice):
+
+::::columns
+
+::: column
+
+- Adept
+- Audible
+- Consume
+- Coherent
+- Emulate
+:::
+
+::: column
+- Erroneous
+- Fortitude
+- Misnomer
+- Reverent
+- Stimulus
+:::
+
+::::
+
+:::footer
+I'm not 100% sure these are the words. But ChatGPT was pretty confident about it!
+:::
+
+## Continuous: `wordsum`
+
+```{r}
+#| echo: false
+
+ggplot(d,
+       aes(x = wordsum,
+           y = after_stat(count*100 / nrow(d)))) +
+  geom_histogram(binwidth = 1,
+                 color = "white") +
+  scale_x_continuous(breaks = 0:10) +
+  labs(x = "Words Correct",
+       y = "% of sample",
+       caption = "Source: 2022 General Social Survey",
+       title = "Distribution of wordsum")
+```
+
+## Center and spread
+
+We can use numbers to summarize a variable from a sample rather than having to reproduce the entire column of data every time.
+
+::::columns
+:::column
+
+#### Center
+
+- mean
+- median
+- mode
+
+:::
+:::column
+
+#### Spread
+
+- variance
+- standard deviation
+- interquartile range
+
+:::
+::::
+
+We will focus on the mean, variance, and standard deviation first.
+
+## Mean and notation
+
+$\bar{x}$ is pronounced "x-bar" and is the **mean** of the variable $x$ in a particular sample. We often use $x$ when we are talking about a variable. 
+
+  $$
+  \bar{x} = \frac{1}{n} \sum_{i=1}^{n} x_i
+  $$
+$\Sigma$ means to sum; $i$ is an _index_ for each observation; $n$ is the number of observations in the sample. So we are summing the values of $x$ for each observation from the first $(i=1)$ to the last $(i=n)$ and then dividing by $n$.
+
+## Mean: `wordsum`
+
+```{r}
+#| echo: false
+
+ggplot(d,
+       aes(x = wordsum,
+           y = after_stat(count*100 / nrow(d)))) +
+  geom_histogram(binwidth = 1,
+                 color = "white") +
+  geom_vline(xintercept = mean(d$wordsum),
+             color = "#CC0000") +
+  scale_x_continuous(breaks = 0:10) +
+  labs(x = "Words Correct",
+       y = "% of sample",
+       caption = "Source: 2022 General Social Survey",
+       title = "Distribution of wordsum")
+```
+
+The mean is `r round(mean(d$wordsum), 2)`.
+
+## Variance
+
+The sample **variance** tells you how spread out the data points are.
+
+  $$
+  s^2 = \frac{1}{n-1} \sum_{i=1}^{n}(x_i-\bar{x})^2
+  $$
+This is _sort of_ the _average squared deviation_ from the mean. We divide by $n-1$ for reasons you don't need to worry about right now. We use _squared deviations_ instead of absolute deviations for many reasons we are _also_ not going to talk about right now!
+
+## Standard deviation
+
+The _variance_ $(s^2)$ has many desirable properties we're not ready to discuss. Its main disadvantage is that it's in _squared units_ of the variable. By taking the square root, we get an interpretable value.
+
+  $$
+  s = \sqrt{\frac{1}{n-1} \sum_{i=1}^{n}(x_i-\bar{x})^2}
+  $$
+The **standard deviation**, $s$, is a "typical deviation" from the mean.
+
+## Standard deviation: `wordsum`
+
+The mean of `wordsum` is `r round(mean(d$wordsum), 2)`. The standard deviation is `r round(sd(d$wordsum), 2)`. 
+
+We'll talk more about how to use these values soon. For now, just remember that a deviation from the mean of that size or less would not be unusual. So anything between 
+
+## Sample and population
+
+So far, we've defined and discussed these as _sample_ statistics rather than population parameters. The notation is slightly different for populations (although researchers are not always consistent).
+
+- The sample mean is $\bar{x}$; the population mean is $\mu$.
+
+- The sample variance is $s^2$; the population variance is $\sigma^2$.
+
+- The sample SD is $s$; the population SD is $\sigma$.
+
+## The normal distribution
+
+In our resampling experiments earlier, we mentioned the **normal distribution**. When we resample and compute the mean, for example, our results will converge to that shape. 
+
+  $$
+  f(x) = \frac{1}{\sigma \sqrt{2\pi}} e^{-\frac{(x - \mu)^2}{2\sigma^2}}
+  $$
+
+:::callout-warning
+This is a **probability density function**. Don't freak out about this. The important thing is to see $\mu$ (the mean) and $\sigma$ (the standard deviation). This just means that the _probability_ of seeing a particular observation is is a function of the mean and SD of the distribution.
+:::
+
+## Normal PDF
+
+```{r}
+#| echo: false
+
+ggplot() +
+  xlim(-4, 4) +
+  geom_function(fun = dnorm,
+                color = "#CC0000") +
+  labs(title = "Normal probability density function",
+       x = "SD diff. from mean",
+       y = "" ~ phi(x) ~ "")
+```
+
+## What is "probabiilty density"?
+
+For a truly continuous variable, the _probability_ that a variable takes on an _exact_ value (say a height of 170.0000... cm) is _zero_. 
+
+This is quite different than, say, the probability that a fair coin comes up heads (.5) or that a person answers "yes" to a question about abortion in a population.
+
+:::{.callout-tip .absolute style="top: 60%;"}
+You could ask the probability that a person's height is, say, greater than or equal to 169.5 and less than 170.5. As the width of this "window" shrinks to zero, the probability also shrinks to zero. But we can talk about the _density_ of the probability in that area.
+:::
+
+## Density can be higher than 1!
+
+```{r}
+#| echo: false
+
+ggplot() +
+  xlim(-4, 4) +
+  geom_function(fun = dnorm,
+                color = "#CC0000") +
+    geom_function(fun = dnorm,
+                  args = list(mean = 0, sd = .3),
+                  color = "blue") +
+  annotate("text", 
+           x = -1.5,
+           y = .7,
+           label = ""~ sigma ~" = .3",
+           size = 5,
+           color = "blue") +
+    annotate("text", 
+           x = -1.5,
+           y = .6,
+           label = ""~ sigma ~" = 1",
+           size = 5,
+           color = "red") +
+  labs(title = "Normal probability density function",
+       x = "SD diff. from mean",
+       y = "" ~ phi(x) ~ "")
+
+```
+
+## Cumulative density function
+
+```{r}
+#| echo: false
+
+ggplot() +
+  xlim(-4, 4) +
+  geom_function(fun = pnorm,
+                color = "#CC0000") +
+  labs(x = "SD diff. from mean",
+       y = "" ~ Phi(x) ~ "")
+```
+
+## Cumulative probability
+
+```{r}
+#| echo: false
+
+ggplot(data.frame(x = c(-4, 4)), 
+       aes(x = x)) +
+  stat_function(fun = pnorm, 
+                color = "#CC0000") +
+  stat_function(fun = pnorm, 
+                geom = "area", 
+                xlim = c(-4, 1), 
+                fill = "#CC0000", 
+                alpha = 0.6) +
+  annotate("text", 
+           x = -2, 
+           y = 0.5, 
+           label = "Pr(x <= 1) = .84", 
+           size = 5, 
+           color = "black") +
+  labs(x = "SD diff. from mean",
+       y = expression(Phi(x)))
+```
+
+## Normal distribution: `wordsum`
+
+Based on what we have already computed, we can approximate the distribution of `wordsum` using a normal distribution with a mean of `r round(mean(d$wordsum), 2)` and a SD of `r round(sd(d$wordsum), 2)`.
+
+We can write this as 
+  
+  $$\text{wordsum} \sim \cal{N}(`r round(mean(d$wordsum), 2)`, `r   round(sd(d$wordsum), 2)`)
+  $$
+  
+
+The first number is the _mean_ and the second is the _standard deviation_.
+
+## How good is this approximation?
+
+```{r}
+#| echo: false
+#| fig-align: center
+
+ggplot(d,
+       aes(x = wordsum)) +
+  geom_histogram(aes(y = after_stat(density)),
+                 binwidth = 1,
+                 color = "white") +
+  stat_function(fun = dnorm, 
+                args = list(mean = mean(d$wordsum), 
+                            sd = sd(d$wordsum)), 
+                color = "#CC0000", linewidth = 1.1) + 
+  scale_x_continuous(breaks = -1:13,
+                     limits = c(-1, 13)) +
+  labs(x = "Words Correct",
+       y = "Density",
+       caption = "Source: 2022 General Social Survey",
+       title = "Distribution of wordsum with normal dist.")
+```
+
+## ECDF vs. Normal
+
+```{r}
+#| echo: false
+
+d |> 
+  group_by(wordsum) |> 
+  summarize(p = n() / nrow(d)) |> 
+  mutate(cp = cumsum(p)) |> 
+  ggplot() +
+  stat_ecdf(aes(x = wordsum + .5, # shift to center of implied bar
+                y = cp),
+            geom = "step", color = "blue") +  
+  stat_function(fun = pnorm,
+                args = list(mean = mean(d$wordsum),
+                            sd = sd(d$wordsum)),
+                color = "#CC0000") +
+  scale_x_continuous(breaks = -1:13,
+                     limits = c(-1, 13)) +
+  labs(x = "Words Correct",
+       y = "Cumulative Probability")
+```
+
+## Homework {.smaller}
+
+For two separate variables with at least 10 categories:
+
+  - calculate and interpret the mean and SD
+  - superimpose a probability density plot on the histogram
+  - interpret the quality of the normal approximation to the observed distribution. What does the approximation get right? What does it get wrong?
+  - use some Latex math (use both inline and display math at least once)
+  - use some inline R code for practice
+
+:::callout-warning
+Make your document look good. For example, label your graph axes, load only packages you actually need, and don't allow `echo` or `message` for loading packages. The default is rendering to HTML. But you can make slides or pdf if you prefer. Try to make it clear that you are not just coping my code!
+:::
+
+## Robust statistics
+
+In inferential statistics (making inferences from samples to populations), we focus on the mean and standard deviation.
+
+The **median** is used more as a descriptive statistic. It is called a **robust statistic** because it is insensitive to **outliers**. For example, the median age in the 2022 GSS is `r median(d$age)`. This would be true even if we took the oldest person and made them 900 years old!
+
+## Median: example
+
+```{r}
+#| echo: false
+
+median_data <- tibble(x1 = 1:11,
+                      x2 = c(1:10, 20)) |> 
+  pivot_longer(everything())
+
+ggplot(median_data,
+       aes(x = value,
+           y = name,
+           color = name)) +
+  geom_point() +
+  theme(legend.position = "none") +
+  labs(y = "",
+       x = "") +
+  annotate("text",
+           x = c(5, 5, 10, 10),
+           y = c(1.25, 2.25, 1.25, 2.25),
+           label = c("mean = 6",
+                     "mean = 6.82",
+                     "median = 6",
+                     "median = 6"))
+  
+``` 
+
+
+## Bernoulli distribution
+
+::::columns
+:::{.column width="50%"}
+
+```{r}
+#| echo: false
+
+d <- d |> 
+  mutate(college = if_else(educ >= 16,
+                           TRUE,
+                           FALSE))
+```
+
+You've seen this before but some statistical distributions have only two options. If we want to describe the proportion of US adults who have a college degree, we can describe this as a **Bernoulli distribution** with $p = `r round(mean(d$college),3)`$.
+:::
+
+:::{.column width="50%"}
+```{r}
+#| echo: false
+#| fig-height: 10
+
+ggplot(d,
+       aes(x = college,
+           y = after_stat(count / nrow(d)))) +
+  geom_bar() +
+  labs(x = "College degree?",
+       y = "Proportion",
+       caption = "Source: 2022 General Social Survey")
+```
+
+:::
+::::
+
+## One- and two-parameter distributions
+
+The normal distribution has two **parameters**, $\mu$ and $\sigma$. This is because the normal distribution is defined by the location of its _center_ and the width of its _spread_.
+
+The Bernoulli distribution has only one parameter, which is $p$ (sometimes people use $\pi$). This is just the probability of a "yes," or, as it is often called, a "success."
+
+[But this doesn't mean that the Bernoulli doesn't have center and spread...]{.fragment}
+
+## Spread of the Bernoulli distribution
+
+Variance is a measure of _uncertainty_ about where the data are. Imagine two alternatives: a Bernoulli distribution with $p = .01$ and one with $p = .50$. There's a lot more uncertainty about the latter!
+
+So the spread is also a function of $p$. In other words, $p$ determines both center and spread.
+
+For a variable, $X$, $\text{Var}[X] = p(1-p)$. [Therefore it's also true that $\text{SD}[X] = \sqrt{p(1-p)}$.]{.fragment}
+
+## From Bernoulli to normal
+
+The normal distribution can be derived as the sum of many Bernoulli trials. For example, imagine we start with 100 people standing on the halfway line of a football field. Each person flips a coin and, if it's heads, takes a step forward (say one meter). If tails, they take a step backward (one meter). What would things look like after 100 trials?
+
+## Physical simulation
+
+{{< video https://www.youtube.com/embed/EvHiee7gs9Y?si=T-5caxz2U12ok3RK >}}
+
+# Univariate inference {.inverse}
+
+## Connecting to the CLT
+
+Now that we know about the _standard deviation_, we are ready to combine this with what we learned earlier about the Central Limit Theorem.
+
+Let's look back at the simulations we did of three Bernoulli distributions with $p = .7$ and sample sizes of 60, 250, and 1000. Recall that each one was simulated 2500 times.
+
+## Remember these?
+
+::::columns
+:::{.column width="60%"}
+
+```{r}
+#| echo: false
+#| fig-height: 9
+
+ggplot(samp_size_compare,
+       aes(x = samp_prop,
+           group = sample_size,
+           color = sample_size)) +
+  geom_density(linewidth = 1.5) +
+  labs(x = "Proportion",
+       y = "Density",
+       color = "Samp. size") +
+  xlim(c(.5, .9))
+  
+```
+:::
+
+:::{.column width="40%"}
+```{r}
+#| echo: false
+
+samp_size_compare |> 
+  group_by(sample_size) |> 
+  summarize(p = mean(samp_prop), 
+            sd = sd(samp_prop))
+```
+:::
+::::
+
+## The sampling distribution
+
+The **sampling distribution** is the distribution that we would get if we did simulations like these infinite times. (Again, ***not*** infinite sample size but infinite simulations of a given sample size!) Thanks to the CLT, we know exactly how these would look!
+
+This example is from a Bernoulli distribution but this works for any distribution. Mean estimates from repeated samples would form a normal distribution with a known mean and standard deviation.
+
+## The standard error
+
+The expected _mean_ of the sampling distribution is just $\bar{x}$, the sample mean. This is the best guess we can make.
+
+:::fragment
+The _standard deviation of the sampling distribution_ has a special name: the **standard error**. The formula is
+
+  $$
+  \text{SE} = \frac{\text{SD}}{\sqrt{n}}
+  $$
+:::
+
+:::fragment
+:::callout-note
+This is one of the many cases where there is an **analytic solution** to a problem we could address through simulation. Use the formulas above to calculate the SEs of the simulations. How well do the empirical values match?
+:::
+:::
+
+## SE examples
+
+Calculate the following SEs:
+
+- GSS age: $\hat{s} = `r round(sd(d$age), 1)`$, $n = `r nrow(d)`$
+
+- GSS wordsum: $\hat{s} = `r round(sd(d$wordsum), 1)`$, $n = `r nrow(d)`$
+
+- GSS college: $\hat{p} = `r round(mean(d$college), 2)`$, $n = `r nrow(d)`$
+
+:::{.callout-note .absolute style="top: 65%;"}
+The "hat" over $\text{SD}$ and $p$ is a way to say explicitly that it is an estimate from a sample. This is pronounced, for example, "p-hat."
+:::
+
+## Margin of error
+
+When we report an estimate (for example an estimated vote proportion from a poll), we want also to report our uncertainty about that estimate because it comes from a sample. 
+
+Most people encounter this "in the wild" as the **margin of error**. This is conventionally calculated as plus or minus two _standard errors_ (for reasons we will discuss below).
+
+:::{.callout-tip .absolute style="top: 65%;"}
+## Calculate
+What would the margin of error values be for yes/no polls with $\hat{p} = .53$ and sample sizes of 400, 900, and 1600? 
+:::
+
+## Confidence interval
+
+Earlier in the course we looked at the interquartile range of the simulation results from sampling. That was a way to quantify how much our results could vary given our sampling set up. 
+
+But the traditional way is to use a **confidence interval** based on the normal distribution. Since we know how to calculate the _standard error_ based on descriptive statistics, we can calculate an interval within which some percentage of the estimates will fall given our sampling design and descriptive results.
+
+## Width of the confidence interval
+
+The width we choose for a confidence interval is a function of how "conservative" we want to be. For example, in a yes/no poll, we are 100% sure that $p$ is between 0 and 1. But that's not very useful.
+
+The $\pm$ 2 SE convention of the "margin of error" is based on the 95% confidence interval, which is the most conventional width now.
+
+## 95% confidence interval
+
+```{r}
+#| echo: false
+
+ggplot(data.frame(x = c(-4, 4)), 
+       aes(x = x)) +
+  stat_function(fun = dnorm, 
+                color = "#CC0000") +
+  stat_function(fun = dnorm, 
+                geom = "area", 
+                xlim = c(-1.96, 1.96), 
+                fill = "#CC0000", 
+                alpha = 0.6) +
+  annotate("text", 
+           x = -2.5, 
+           y = 0.35, 
+           label = "+/- 1.96 SE", 
+           size = 5, 
+           color = "black") +
+  labs(x = "SEs from the mean \n (z-score)",
+       y = expression(phi(x)))
+```
+
+## 99% confidence interval
+
+```{r}
+#| echo: false
+
+ggplot(data.frame(x = c(-4, 4)), 
+       aes(x = x)) +
+  stat_function(fun = dnorm, 
+                color = "#CC0000") +
+  stat_function(fun = dnorm, 
+                geom = "area", 
+                xlim = c(-2.58, 2.58), 
+                fill = "#CC0000", 
+                alpha = 0.6) +
+  annotate("text", 
+           x = -2.5, 
+           y = 0.35, 
+           label = "+/- 2.58 SE", 
+           size = 5, 
+           color = "black") +
+  labs(x = "SEs from the mean \n (z-score)",
+       y = expression(phi(x)))
+```
+
+## 89% confidence interval
+
+```{r}
+#| echo: false
+
+ggplot(data.frame(x = c(-4, 4)), 
+       aes(x = x)) +
+  stat_function(fun = dnorm, 
+                color = "#CC0000") +
+  stat_function(fun = dnorm, 
+                geom = "area", 
+                xlim = c(-1.598, 1.598), 
+                fill = "#CC0000", 
+                alpha = 0.6) +
+  annotate("text", 
+           x = -2.5, 
+           y = 0.35, 
+           label = "+/- 1.598 SE", 
+           size = 5, 
+           color = "black") +
+  labs(x = "SEs from the mean \n (z-score)",
+       y = expression(phi(x)))
+```
+
+## 68% confidence interval
+
+```{r}
+#| echo: false
+
+ggplot(data.frame(x = c(-4, 4)), 
+       aes(x = x)) +
+  stat_function(fun = dnorm, 
+                color = "#CC0000") +
+  stat_function(fun = dnorm, 
+                geom = "area", 
+                xlim = c(-1, 1), 
+                fill = "#CC0000", 
+                alpha = 0.6) +
+  annotate("text", 
+           x = -2.5, 
+           y = 0.35, 
+           label = "+/- 1 SE", 
+           size = 5, 
+           color = "black") +
+  labs(x = "SEs from the mean \n (z-score)",
+       y = expression(phi(x)))
+```
+
+## Aside: the z-score
+
+The **z-score** is a how we refer to how many standard deviations away from the mean a particular value is. This applies everywhere the normal distribution gets used.
+
+It's an abstract way to talk about "weirdness" without specifying units. If a person is 5 SDs from the mean on some dimension, they are very, very weird! This is true for height, wealth, extraversion, etc.
+
+:::{.callout-tip .absolute style="top: 65%;"}
+If the mean height for men in the US is about 70 inches and the SD is about 4 inches, how tall is someone 5 SDs above the mean? Below the mean?
+:::
+
+## Interpreting confidence intervals
+
+What most people say is "we are 95% sure the true value is between the lower and upper bound of the confidence interval." But that's not _quite_ accurate. 
+
+It's more correct to say that, if we did the same study infinite times, 95% of the computed intervals would contain the true value.
+
+The confidence level refers to our confidence in the _procedure_, not the specific interval, since that is calculated from just one dataset.
+
+## Homework
+
+- Calculate means, SDs, and confidence intervals (89%, 95%, 99%) for one continuous and one binary variable. Interpret the confidence intervals.
+- Do two simulations (one continuous, one binary) to show that simulation-based standard deviations of the estimate converge to the formula-based standard error of the sampling distribution. Explain the result to show you understand what you did.
+
+## Univariate hypothesis test
+
+The confidence interval is closely linked to the idea of the **hypothesis test**. This uses the _sample data_ to test if there is enough evidence to assert that the _population_ differs from some specific reference value.
+
+This reference value is called the **null hypothesis**.
+
+## Hypothesis test considerations
+
+As we've seen, the probability that a variable takes on an exactly specific value is, for all intents and purposes, zero. So we want to ask if the sample statistic is _different_ from (above or below) some specific value.
+
+In the case of yes/no polling, the most obvious null hypothesis is .5 or 50%. This is because the majority wins.
+
+## Example
+
+Consider we are conducting a poll on a high-speed rail initiative. We want to know if it's going to pass. This gives an obvious null hypothesis of 50%. Can we confidently assert that the actual vote numbers are going to be above or below 50%? Or is the evidence too close to 50% to tell?
+
+Let's say we poll 600 registered voters and estimate $\hat{p}_{\text{yes}} = .55$. Does this give us enough evidence to say that it's going to pass?
+
+## The null distribution
+
+The way to approach this is to ask what the world would look like if the null hypothesis (a 50/50 split in the population) were actually true? What would the results of that world look like if we polled it infinite times? 
+
+[More specifically, how often would we get a result 5 or more percentage points away from .5?]{.fragment}
+
+## {.smaller}
+
+```{r}
+#| echo: false
+
+se <- sqrt(.5*.5) / sqrt(600)
+
+myprop <- pnorm(.55, .5, se) - pnorm(.45, .5, se) # not included
+
+ggplot(data.frame(x = c(.4, .6)), 
+       aes(x = x)) +
+  stat_function(fun = dnorm,
+                args = list(mean = .5,
+                            sd = se),
+                color = "#CC0000") +
+  stat_function(fun = dnorm, 
+                args = list(mean = .5,
+                            sd = se),
+                geom = "area", 
+                xlim = c(.45, .55), 
+                fill = "#CC0000", 
+                alpha = 0.6) +
+  annotate("text", 
+           x = .45, 
+           y = 10, 
+           label = "98.6% between \n .45 and .55", 
+           size = 4, 
+           color = "black") +
+  geom_vline(xintercept = .55,
+             linetype = "dashed") +
+  labs(x = "Hypothetical poll result",
+       y = expression(phi(x)))
+```
+
+If the null were true, we'd only expect to get a value this far away from the expected null value 1.4% of the time. This is called a **p-value**.
+
+## Tails and tests
+
+The unshaded area of the last graph represents 1.4% of the area of the sampling distribution. But why are we using the left and right sides? Why not just use the right side and get a p-value of 0.7%? After all, it is true that we'd only expect to get a value _as large as_ .55 in a sample 0.7% of the time.
+
+[The use of **two-tailed tests** rather than **one-tailed tests** is ubiquitous in sociology. It's regarded as "conservative" even though there is usually not a good rationale for it.]{.fragment}
+
+:::{.fragment .callout-note .absolute style="top: 75%;"}
+We haven't actually talked about how to use these for a "test" yet, but we're close!
+:::
+
+## z-score "weirdness"
+
+We can approach this issue more generally through z-scores. What is the standard error of the null sampling distribution? Recall that the null proportion is .5 and the sample size is 600. [(It's about .0204.)]{.fragment}
+
+[How "weird" therefore is our result of .55? How many standard errors is it away from the expected value of the null distribution?]{.fragment} [(It's about 2.45 SE away.)]{.fragment}
+
+## From z-score to p-value
+
+The probability of getting an absolute z-score of 2.45 or greater is about .014. We can get that value using R code:
+
+```{r}
+(1 - pnorm(2.45)) * 2 # times 2 for high and low tails
+```
+
+This is called the **p-value** of the test.
+
+## Alpha level
+
+How do we connect these ideas to a hypothesis test? To conduct a hypothesis test, we need an **alpha level** (or $\alpha$ level). This is the proportion of the time we're willing to _falsely_ assert that the observed data did not come from the null distribution.
+
+This is connected to the idea of **type-I error** or the idea of a **false positive**.
+
+In the above case, for example, there is a chance (1.4%) that we could see a polling result as high as 55% (or as low as .45) with our sample size even if the population is actually 50/50.
+
+## Hypothesis test {.smallish}
+
+We're now ready for the algorithm of the hypothesis test:
+
+:::incremental
+
+1. Choose an alpha level (say, .05)
+2. Calculate the observed sample statistic (e.g., .55)
+3. Calculate the absolute difference between the statistic and the expected value under the null (.55 - .50 = .05)
+4. Convert this difference into a z-score using the SE of the sampling distribution (z = .05 / .0204 = 2.45)
+5. Convert the z-score to a p-value (.014)
+6. If the p-value is less than alpha **reject the null hypothesis**; if the p-value is greater than alpha **fail to reject the null hypothesis**.
+:::
+
+## Writing the test
+
+Sometimes people write a hypothesis test out formally. Here's an example.
+
+$$
+H_0 : p = .5 \\ H_1 : p \neq .5 
+$$
+
+## Rejecting (or not) the null
+
+This language can feel weird. We can never _accept_ the null hypothesis ($H_0$), in part because the probability of an exact value (e.g., .5) being true is basically zero. So we can only either _reject_ the null hypothesis or _fail to reject it_.
+
+[When we reject the null hypothesis, we call a result **statistically significant.** That's literally _all_ that phrase means!]{.fragment}
+
+## Conventional alpha levels
+
+The conventional alpha level for a test is .05. Heuristically speaking, this means we're willing to falsely reject the null hypothesis 5% of the time. This value is by no means sacred. In fact, it is fundamentally arbitrary.
+
+Just as we saw above with confidence intervals, we can pick any value we like, which is both liberating and scary!
+
+## p-values and confidence intervals
+
+There is a close relationship between p-values and confidence intervals. For example, if a 95% confidence interval includes the null value, the p-value of the hypothesis test will be above .05. 
+
+:::fragment
+In our example, the 95% confidence interval for our poll would be [.51, .59]. Since this interval does not include .5, we could decide to reject the null hypothesis on that basis.
+:::
+
+:::fragment
+In fact, because p-values and CIs can both be used for testing, it's usually better to use CIs because they convey the uncertainty of the estimate as well.
+:::
+
+## Continuous variables
+
+The same logic applies to continuous variables in exactly the same way. The only difference is the calculation of the standard error, which relies on the standard deviation.
+
+## p-value pitfalls
+
+People sometimes say and do stupid things with p-values. Here are some tips:
+
+- Don't use asterisks as informal indicators of "how big" an effect is (do you have an alpha level or not?)
+- Don't mistake "statistical significance" for importance
+- When assessing the plausibility of a hypothesis, you need to know the **prior probability** of the hypothesis as well as the p-value. [Bayes' Rule...]
+
+## Homework
+
+:::smallish
+
+Conduct four hypothesis tests (two binary, two continuous) using variables you haven't used before. Please do the following:
+
+- choose a reasonable null (although this will be somewhat arbitrary in many cases) 
+- go through the whole algorithm and interpret each step correctly 
+- use at least two different alpha levels throughout the homework (but just one per variable)
+- compare the hypothesis test results to confidence intervals to improve your intuition
+- as always, do at least one visualization per test
+
+:::
+
+# Comparing Two Groups {.inverse}
+
+## Overview
+
+We learned about univariate confidence intervals and tests against a **point null hypothesis** because they are relatively simple. But most things in social science are about _comparison_ between groups or levels. We are going to start with two-group comparisons and then move to a more general framework in the next section.
+
+## Education and abortion rights
+
+As usual, we will start with simulation. Let's go back to `abany`. Do college-educated and non-college educated people have different levels of support for abortion rights? Let's set up the data.
+
+```{r}
+dab <- gss2022 |> 
+  select(abany, degree) |> 
+  drop_na() |> 
+  mutate(abany = if_else(abany == 1, 1, 0),
+         college = if_else(degree >= 3, "BA+", "<BA"))
+```
+
+## Visualizing the difference
+
+```{r}
+#| echo: false
+
+dab |> 
+  group_by(college) |> 
+  summarize(prop = mean(abany)) |> 
+  ggplot(
+    aes(x = college,
+        y = prop * 100)) +
+  geom_col() +
+  ylim(0, 100) +
+  labs(title = "Support for abortion rights by education",
+       x = "Degree status",
+       y = "% supporting",
+       caption = "Source: 2022 GSS")
+
+p1 <- mean(dab$abany[dab$college=="BA+"])
+p2 <- mean(dab$abany[dab$college=="<BA"])
+
+```
+
+## Inference to the population
+
+In the sample, we see that there is a difference. Among those with college degrees, `r round(p1, 2)` support. Among those without, `r round(p2, 2)` support. But is there a difference in the population? We can set up the question like this:
+
+$$
+H_0: p_{\tiny{BA+}} = p_{\tiny{<BA}} \\ H_1: p_{\tiny{BA+}} \neq p_{\tiny{<BA}}
+$$
+
+## Test as difference
+
+There's another way we could set this up, however, which makes it clearer how we might test it.
+
+$$
+H_0: p_{\tiny{BA+}} - p_{\tiny{<BA}} = 0 \\ H_1: p_{\tiny{BA+}} - p_{\tiny{<BA}} \neq 0
+$$
+
+## The null distribution
+
+Testing this requires setting up a world where the proportions _are_ the same in the two groups and then evaluating how often we get a difference as large as we do in the sample. This is very much like we did before when we set up a null polling distribution where the true value was .5 and then seeing how often we got a departure from _that value_ as large as in the sample.
+
+## Simulation function {.smallish}
+
+```{r}
+# based on empirical values
+pooled_prop <- mean(dab$abany)
+n1 <- dab |> filter(college == "BA+") |> nrow()
+n2 <- dab |> filter(college == "<BA") |> nrow()
+
+# function
+## set up df and random gen abany
+null_diff <- function(p, n1, n2) {
+  tmp <- tibble(
+    id = 1:(n1 + n2),                  # number of cases
+    college = c(rep("BA+", n1),        # correct Ns
+                rep("<BA", n2))) |>   
+    mutate(abany = rbinom(1, 1, p),    # fake abany
+           .by = id)                   # rowwise() like
+
+## spit out diff
+mean(tmp$abany[tmp$college == "BA+"]) -  
+mean(tmp$abany[tmp$college == "<BA"])
+
+}
+```
+
+## Simulation
+
+```{r}
+set.seed(722)
+
+# draw 5000 diffs from null distribution
+abany_null_sims <-
+  tibble(
+    sim_id = 1:2000) |> 
+  mutate(diff = null_diff(pooled_prop, n1, n2),
+         .by = sim_id)
+```
+
+## Results
+
+```{r}
+#| echo: false
+
+ggplot(
+  abany_null_sims,
+  aes(x = diff)) +
+  geom_density(alpha = .4,
+               fill = "#CC0000",
+               color = NA)
+```
+
+## Interpreting the test
+
+The simulation results vary from `r round(min(abany_null_sims$diff), 3)` to `r round(max(abany_null_sims$diff), 3)`. This doesn't _exactly_ mean a p-value of zero, but we didn't find _any_ differences as large as the real data in 2000 tries.
+
+We would certainly reject the null hypothesis of no difference under any realistic alpha level here.
+
+## Simulating the confidence interval
+
+We could also use the real data to simulate the confidence interval of the difference. Instead of resampling from the null distribution, we can resample from the _observed_ distribution. This is called **bootstrapping**.
+
+```{r}
+get_diff <- function() {
+  tmp <- slice_sample(dab,               # sample
+                      n = nrow(dab),     # same size
+                      replace = TRUE)    # with replacement
+  
+mean(tmp$abany[tmp$college == "BA+"]) -  # get diff
+mean(tmp$abany[tmp$college == "<BA"])
+}
+```
+
+## Simulation
+
+```{r}
+#| cache: true
+
+set.seed(722)
+
+# draw 5000 diffs from null distribution
+abany_boot_diffs <-
+  tibble(
+    sim_id = 1:2000) |> 
+  mutate(diff = get_diff(),
+         .by = sim_id)
+```
+
+## Results
+
+```{r}
+#| echo: false
+
+ggplot(
+  abany_boot_diffs,
+  aes(x = diff)) +
+  geom_density(alpha = .4,
+               fill = "#CC0000",
+               color = NA)
+```
+
+## Interpretation {.smallish}
+
+Here is the 99% confidence interval of the difference based on the **percentile bootstrap**.
+
+```{r}
+quantile(abany_boot_diffs$diff, c(.005, .995)) |> 
+  round(3)
+```
+
+Here is the 99% confidence interval based on the **normal bootstrap**.
+
+```{r}
+obsdiff <-  # ACTUAL difference
+  mean(dab$abany[dab$college == "BA+"]) -
+  mean(dab$abany[dab$college == "<BA"])
+bootsd <- sd(abany_boot_diffs$diff)
+
+c(obsdiff - 2.57 * bootsd,
+  obsdiff + 2.57 * bootsd) |> round(3)
+```
+
+Neither includes zero, suggesting a population difference.
+
+## Analytic hypothesis test {.smallish}
+
+We can do these things without simulation. Here is the analytic test for a difference in proportions, where $\hat{p}$ is just the observed whole sample proportion.
+
+$$
+Z=\dfrac{(\hat{p}_1-\hat{p}_2)}{\sqrt{\hat{p}(1-\hat{p})\left(\dfrac{1}{n_1}+\dfrac{1}{n_2}\right)}}
+$$
+We just turn this z-value into a p-value and compare to alpha.
+
+## Example
+
+We have most of the values we need from above already. But here are two more, the formula, and the results.
+
+```{r}
+p1 <- mean(dab$abany[dab$college=="BA+"])
+p2 <- mean(dab$abany[dab$college=="<BA"])
+
+zstat <- 
+  (p1 - p2) /
+  sqrt(pooled_prop * (1 - pooled_prop) * (1 / n1 + 1 / n2))
+
+zstat                     # z-statistic
+(1 - pnorm(zstat)) * 2    # two-sided p-value
+```
+
+
+## Analytic confidence interval {.smallish}
+
+To get a confidence interval, you need the **standard error of the difference** and then you just calculate it the usual way (e.g., $\pm$ 2.57 SEs. The formula for the SE is:
+
+$$
+\text{SE}_{\text{diff}} = \sqrt{ \frac{\hat{p}_1(1-\hat{p}_1)}{n_1} + \frac{\hat{p}_2(1-\hat{p}_2)}{n_2}}
+$$
+
+```{r}
+#| echo: false
+
+sediff <- sqrt( p1*(1-p1) / n1 + p2*(1-p2) / n2 )
+lower <- obsdiff - 2.57 * sediff
+upper <- obsdiff + 2.57 * sediff
+```
+
+This gives us a SE of `r round(sediff, 3)` and a 99% CI of \[`r round(lower, 3)`, `r round(upper, 3)`\]. This is quite close to the bootstrap estimates.
+
+## Extending to continuous variables
+
+I am not going to prove to you that simulations work just as well for continuous variables. For example, we could ask whether older people really score better on `wordsum`.
+
+```{r}
+dword <- gss2022 |> 
+  select(wordsum, age) |> 
+  drop_na() |> 
+  mutate(agecat = if_else(age > 46, "older", "younger"))
+```
+
+## Visualizing the difference
+
+```{r}
+#| echo: false
+
+dword |> 
+  summarize(mwords = mean(wordsum), .by = agecat) |> 
+  ggplot(
+    aes(x = agecat,
+        y = mwords)) +
+  geom_col() +
+  ylim(0, 10) +
+  labs(title = "vocabulary score by age group",
+       x = "Age group (older = 47+)",
+       y = "Mean score (0-10)",
+       caption = "Source: 2022 GSS")
+```
+
+## Visualizing the distribution
+
+```{r}
+#| echo: false
+
+dword |> 
+  ggplot(
+    aes(x = wordsum,
+        fill = agecat)) +
+  geom_density(alpha = .5,
+               color = NA)
+```
+
+## Hypothesis test
+
+The setup for the test is very similar for means as for proportions. Only the typical Greek letter changes.
+
+$$
+H_0: \mu_{\tiny{older}} - \mu_{\tiny{younger}} = 0 \\ H_1: \mu_{\tiny{older}} - \mu_{\tiny{younger}} \neq 0
+$$
+
+## Analytic solution
+
+As we will very briefly discuss, people often use something called a **t-test** for comparing differences in means. For now, we're going to stick with our approach based on z-scores and the normal distribution. The formula is:
+
+$$
+Z = \frac{\bar{X}_1 - \bar{X}_2}{\sqrt{\frac{\sigma_1^2}{n_1} + \frac{\sigma_2^2}{n_2}}}
+$$
+```{r}
+#| echo: false
+
+m1 <- mean(dword$wordsum[dword$agecat=="older"])
+m2 <- mean(dword$wordsum[dword$agecat=="younger"])
+
+s1 <- sd(dword$wordsum[dword$agecat=="older"])
+s2 <- sd(dword$wordsum[dword$agecat=="younger"])
+
+n1 <- length(dword$wordsum[dword$agecat=="older"])
+n2 <- length(dword$wordsum[dword$agecat=="younger"])
+
+zstat <- (m1-m2) / sqrt((s1^2/n1) + (s2^2/n2))
+
+pval <- (1 - pnorm(zstat)) * 2    # two-sided p-value
+
+```
+
+The z-statistic is `r zstat` and the p-value is `r pval`. Looks like the difference in the population probably isn't exactly zero!
+
+## Analytic confidence interval
+
+The confidence interval is the same, based on the denominator of the z-test as before:
+
+$$
+\text{SE}_{\text{diff}} = \sqrt{\frac{\sigma_1^2}{n_1} + \frac{\sigma_2^2}{n_2}}
+$$
+
+```{r}
+#| echo: false
+
+obsdiff <- m1-m2
+sediff <- sqrt((s1^2/n1) + (s2^2/n2))
+
+lower <- obsdiff -  * sediff
+upper <- obsdiff + 2.57 * sediff
+```
+
+So the 99% confidence interval would be \[`r round(lower, 2)`, `r round(upper, 2)`\].
+
+## Student's t-distribution
+
+[to be added]
+
+## Summary
+
+The simplest social science questions are about _comparing groups_. Comparing means and proportions across just two groups are the simplest versions of this but give you all the basic ideas. The only real difference between the binary and continuous cases is, once again, that the SD is its "own thing" in the continuous case rather than a function of the central tendency, as in the Bernoulli case.
+
+## Homework
+
+Compare two groups on two binary and two continuous variables. Do hypothesis tests and confidence intervals. State the null hypotheses and the alternatives. To receive full credit, don't use the same grouping variable for all four; use at least two different grouping variables.
+
