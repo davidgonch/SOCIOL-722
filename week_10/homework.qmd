@@ -1,0 +1,335 @@
+---
+title: "Week 10 - Homework"
+format: 
+  html:
+    embed-resources: true
+editor: visual
+
+author: "David Gonzalez Chavez"
+
+execute:
+  echo: true
+  warning: false
+  message: false
+  freeze: auto
+---
+
+```{r}
+#| echo: false
+#| message: false
+#| warning: false
+
+library(tidyverse)
+library(gssr)
+
+
+theme_set(theme_light())
+
+```
+
+# Data
+
+The data for this homework assignment comes from the 2022 GSS.
+
+```{r}
+
+gss2022 <- gss_get_yr(year = 2022) |> # get 2022 GSS data
+  haven::zap_labels()                 # remove labels
+
+```
+
+# Analysis #1: Degree Attainment by Sex
+
+The first analysis will be between men and women. The analysis will be differences in their church attendance.
+
+```{r}
+
+sex_church <- gss2022 |> 
+  select(sex, attend) |> # select the sex variable and church attendance (comparison) variables
+  drop_na() |> 
+  mutate(sex_label = if_else(sex == 1, "Male", "Female")) |> 
+  mutate(sex = if_else(sex == 1, 1, 0)) |> 
+  mutate(attend_label = if_else(attend==0, "Does Not Attend Church", "Attends Church")) |> # 0 is never, 1+ is attends 
+  mutate(attend = if_else(attend == 0, 1, 0)) # if attend is 0, they do not attend church
+
+sex_church_plot <- sex_church |>
+  group_by(sex_label, attend_label) |> # group by sex and church attendance
+  summarize(n = n()) |> # get count with that combo
+  mutate(percent = n/sum(n)) # get percent of group for each subgroup
+
+ggplot(sex_church_plot,
+       aes(x = attend_label,
+           fill = sex_label,
+           y = percent)) +
+  geom_bar(position = "dodge",
+           stat = "identity") +
+  labs(x = "Church Attendance",
+       fill = "Sex") +
+  scale_y_continuous(labels = scales::percent)
+
+```
+
+## Difference in Probability Regression
+
+```{r}
+mod1_sex_church <- glm(attend ~ sex,
+            data = sex_church,
+            family = binomial(link = "identity"))
+
+summary(mod1_sex_church)
+```
+
+The difference in probabilities regression suggests that men are `{r} abs(round(summary(mod1_sex_church)$coefficients[2],4))*100` percentage points more likely to not attend church than women. The p-value for this estimate is less than our alpha level of .05, therefore we can reject the null hypothesis (no difference in probability).
+
+## Risk Ratio Regression
+
+```{r}
+
+mod2_sex_church <- glm(attend ~ sex,
+            data = sex_church,
+            family = binomial(link = "log"))
+
+summary(mod2_sex_church)
+
+exp(summary(mod2_sex_church)$coefficients[2])
+
+```
+
+The risk ratio regression suggests that men are `{r} (exp(summary(mod2_sex_church)$coefficients[2])*100) - 100` percent more likely to not attend church than women. The p-value for this estimate is less than our alpha level of .05, therefore we can reject the null hypothesis (no difference in risk).
+
+## Logistic Regression
+
+```{r}
+
+mod3_sex_church <- glm(attend ~ sex,
+            data = sex_church,
+            family = binomial(link = "logit"))
+
+summary(mod3_sex_church)
+
+exp(summary(mod3_sex_church)$coefficients[2])
+
+```
+The logistic regression suggests that the odds of men not attending church are `{r} exp(summary(mod3_sex_church)$coefficients[2])` times higher than for women. The p-value for this estimate is less than our alpha level of .05, therefore we can reject the null hypothesis (no difference in odds).
+
+# Analysis #2: X-Rated Movies by Sex
+
+The second analysis will be between men and women. The analysis will be differences in whether they watched an X-rated movie in the last year. 
+
+```{r}
+
+sex_xrated <- gss2022 |> 
+  select(sex, xmovie) |> # select the sex variable and x-rated movie (comparison) variables
+  drop_na() |> 
+  mutate(sex_label = if_else(sex == 1, "Male", "Female")) |> 
+  mutate(sex = if_else(sex == 1, 1, 0)) |> 
+  mutate(xmovie_label = if_else(xmovie==1, "Did Watch", "Did Not Watch")) |> # 1 is did watch, 2 is no
+  mutate(xmovie = if_else(xmovie == 1, 1, 0)) # if xmovie is 0, they do not consume x-rated movie
+
+sex_xrated_plot <- sex_xrated |>
+  group_by(sex_label, xmovie_label) |> # group by sex and xrated movie watching
+  summarize(n = n()) |> # get count with that combo
+  mutate(percent = n/sum(n)) # get percent of group for each subgroup
+
+ggplot(sex_xrated_plot,
+       aes(x = xmovie_label,
+           fill = sex_label,
+           y = percent)) +
+  geom_bar(position = "dodge",
+           stat = "identity") +
+  labs(x = "X-Rated Movie in Past Year",
+       fill = "Sex") +
+  scale_y_continuous(labels = scales::percent)
+
+```
+
+## Difference in Probability Regression
+
+```{r}
+mod1_sex_xrated <- glm(xmovie ~ sex,
+            data = sex_xrated,
+            family = binomial(link = "identity"))
+
+summary(mod1_sex_xrated)
+```
+
+The difference in probabilities regression suggests that men are `{r} abs(round(summary(mod1_sex_xrated)$coefficients[2],4))*100` percentage points more likely to have watched an x-rated movie in the past year than women. The p-value for this estimate is less than our alpha level of .05, therefore we can reject the null hypothesis (no difference in probability).
+
+## Risk Ratio Regression
+
+```{r}
+
+mod2_sex_xrated <- glm(xmovie ~ sex,
+            data = sex_xrated,
+            family = binomial(link = "log"))
+
+summary(mod2_sex_xrated)
+
+exp(summary(mod2_sex_xrated)$coefficients[2])
+
+```
+
+The risk ratio regression suggests that men are `{r} (exp(summary(mod2_sex_xrated)$coefficients[2])*100) - 100` percent more likely to have watched an x-rated movie in the past year than women. The p-value for this estimate is less than our alpha level of .05, therefore we can reject the null hypothesis (no difference in risk).
+
+## Logistic Regression
+
+```{r}
+
+mod3_sex_xrated <- glm(xmovie ~ sex,
+            data = sex_xrated,
+            family = binomial(link = "logit"))
+
+summary(mod3_sex_xrated)
+
+exp(summary(mod3_sex_xrated)$coefficients[2])
+
+```
+The logistic regression suggests that the odds of men having watched an x-rated movie in the past year are `{r} exp(summary(mod3_sex_xrated)$coefficients[2])` times higher than for women. The p-value for this estimate is less than our alpha level of .05, therefore we can reject the null hypothesis (no difference in odds).
+
+# Analysis #3: Happiness by Marital Status
+
+The third analysis will be between married and unmarried respondents. The analysis will be differences in whether they reported being very happy. 
+
+```{r}
+
+marriage_happiness <- gss2022 |> 
+  select(marital, happy) |> # select the marriage variable and x-rated movie (comparison) variables
+  drop_na() |> 
+  mutate(marriage_label = if_else(marital == 1, "Actively Married", "Not Currently Married")) |> #1 = married, 2+ is unmarried, widowed, etc. 
+  mutate(marriage = if_else(marital == 1, 1, 0)) |> 
+  mutate(happy_label = if_else(happy==1, "Very Happy", "Not Very Happy")) |> # 1 is very happy, 2 pretty happy, 3 not too happy
+  mutate(happy = if_else(happy == 1, 1, 0)) # if happy is 1, very happy
+
+marriage_happiness_plot <- marriage_happiness |>
+  group_by(marriage_label, happy_label) |> # group by marriage and happiness
+  summarize(n = n()) |> # get count with that combo
+  mutate(percent = n/sum(n)) # get percent of group for each subgroup
+
+ggplot(marriage_happiness_plot,
+       aes(x = happy_label,
+           fill = marriage_label,
+           y = percent)) +
+  geom_bar(position = "dodge",
+           stat = "identity") +
+  labs(x = "Happiness",
+       fill = "Marital Status") +
+  scale_y_continuous(labels = scales::percent)
+
+```
+
+## Difference in Probability Regression
+
+```{r}
+mod1_marriage_happiness <- glm(happy ~ marriage,
+            data = marriage_happiness,
+            family = binomial(link = "identity"))
+
+summary(mod1_marriage_happiness)
+```
+
+The difference in probabilities regression suggests that married people are `{r} abs(round(summary(mod1_marriage_happiness)$coefficients[2],4))*100` percentage points more likely to be very happy than unmarried people. The p-value for this estimate is less than our alpha level of .05, therefore we can reject the null hypothesis (no difference in probability).
+
+## Risk Ratio Regression
+
+```{r}
+
+mod2_marriage_happiness <- glm(happy ~ marriage,
+            data = marriage_happiness,
+            family = binomial(link = "log"))
+
+summary(mod2_marriage_happiness)
+
+exp(summary(mod2_marriage_happiness)$coefficients[2])
+
+```
+
+The risk ratio regression suggests that married people are `{r} exp(summary(mod2_marriage_happiness)$coefficients[2])*100 - 100` percent more likely to be very happy than unmarried people. The p-value for this estimate is less than our alpha level of .05, therefore we can reject the null hypothesis (no difference in risk).
+
+## Logistic Regression
+
+```{r}
+
+mod3_marriage_happiness <- glm(happy ~ marriage,
+            data = marriage_happiness,
+            family = binomial(link = "logit"))
+
+summary(mod3_marriage_happiness)
+
+exp(summary(mod3_marriage_happiness)$coefficients[2])
+
+```
+The logistic regression suggests that the odds of married people being very happy are `{r} exp(summary(mod3_marriage_happiness)$coefficients[2])` times higher than for unmarried people. The p-value for this estimate is less than our alpha level of .05, therefore we can reject the null hypothesis (no difference in odds).
+
+# Analysis #4: Financial Satisfaction by Marital Status
+
+The fourth analysis will be between married and unmarried respondents. The analysis will be differences in financial satisfaction. 
+
+```{r}
+
+marriage_finsatisfaction <- gss2022 |> 
+  select(marital, satfin) |> # select the marriage variable and x-rated movie (comparison) variables
+  drop_na() |> 
+  mutate(marriage_label = if_else(marital == 1, "Actively Married", "Not Currently Married")) |> #1 = married, 2+ is unmarried, widowed, etc. 
+  mutate(marriage = if_else(marital == 1, 1, 0)) |> 
+  mutate(satfin_label = if_else(satfin==1, "Well Satisfied", "Not Well Satisfied")) |> # 1 is pretty well satisfied, 2+ is more/less and not satisfied
+  mutate(satfin = if_else(satfin == 1, 1, 0)) # if satfin is 1, well satisfied
+
+marriage_finsatisfaction_plot <- marriage_finsatisfaction |>
+  group_by(marriage_label, satfin_label) |> # group by marriage and satisfaction
+  summarize(n = n()) |> # get count with that combo
+  mutate(percent = n/sum(n)) # get percent of group for each subgroup
+
+ggplot(marriage_finsatisfaction_plot,
+       aes(x = satfin_label,
+           fill = marriage_label,
+           y = percent)) +
+  geom_bar(position = "dodge",
+           stat = "identity") +
+  labs(x = "Satisfaction With Current FInancial Situation",
+       fill = "Marital Status") +
+  scale_y_continuous(labels = scales::percent)
+
+```
+
+## Difference in Probability Regression
+
+```{r}
+mod1_marriage_finsatisfaction <- glm(satfin ~ marriage,
+            data = marriage_finsatisfaction,
+            family = binomial(link = "identity"))
+
+summary(mod1_marriage_finsatisfaction)
+```
+
+The difference in probabilities regression suggests that married people are `{r} abs(round(summary(mod1_marriage_finsatisfaction)$coefficients[2],4))*100` percentage points more likely to be satisfied with their financial situation than unmarried people. The p-value for this estimate is less than our alpha level of .05, therefore we can reject the null hypothesis (no difference in probability).
+
+## Risk Ratio Regression
+
+```{r}
+
+mod2_marriage_finsatisfaction <- glm(satfin ~ marriage,
+            data = marriage_finsatisfaction,
+            family = binomial(link = "log"))
+
+summary(mod2_marriage_finsatisfaction)
+
+exp(summary(mod2_marriage_finsatisfaction)$coefficients[2])
+
+```
+
+The risk ratio regression suggests that married people are `{r} exp(summary(mod2_marriage_finsatisfaction)$coefficients[2])*100 - 100` percent more likely to be satisfied with their financial situation than unmarried people. The p-value for this estimate is less than our alpha level of .05, therefore we can reject the null hypothesis (no difference in risk).
+
+## Logistic Regression
+
+```{r}
+
+mod3_marriage_finsatisfaction <- glm(satfin ~ marriage,
+            data = marriage_finsatisfaction,
+            family = binomial(link = "logit"))
+
+summary(mod3_marriage_finsatisfaction)
+
+exp(summary(mod3_marriage_finsatisfaction)$coefficients[2])
+
+```
+The logistic regression suggests that the odds of married people being satisfied with their financial situation are `{r} exp(summary(mod3_marriage_finsatisfaction)$coefficients[2])` times higher than for unmarried people. The p-value for this estimate is less than our alpha level of .05, therefore we can reject the null hypothesis (no difference in odds).
