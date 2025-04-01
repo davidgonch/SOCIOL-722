@@ -1,0 +1,90 @@
+---
+title: "Week 10 - Homework"
+format: 
+  html:
+    embed-resources: true
+editor: visual
+
+author: "David Gonzalez Chavez"
+
+execute:
+  echo: true
+  warning: false
+  message: false
+  freeze: auto
+---
+
+```{r}
+#| echo: false
+#| message: false
+#| warning: false
+
+library(tidyverse)
+library(gssr)
+
+
+theme_set(theme_light())
+
+```
+
+# Data
+
+The data for this homework assignment comes from the 2022 GSS.
+
+```{r}
+
+gss2022 <- gss_get_yr(year = 2022) |> # get 2022 GSS data
+  haven::zap_labels()                 # remove labels
+
+```
+
+The analysis will be for 
+
+```{r}
+
+sex_marijuana <- gss2022 |> 
+  select(sex, sexornt) |> # get variables
+  drop_na() |> 
+  mutate(female = if_else(sex == 2, 1, 0)) |> 
+  mutate(sex_label = if_else(sex == 2, "Female", "Male")) |> 
+  mutate(heterosexual = if_else(sexornt == 3, 1, 0)) |> #if "yes" to devil (1 or 2), yes)
+  mutate(sexuality_label = if_else(sexornt == 3, "Heterosexual", "Not Heterosexual"))
+
+table(sex_marijuana$sex_label, sex_marijuana$sexuality_label)
+
+```
+
+- three binary models (one LPM, one log, one logit)
+- two "linear regressions" (Gaussian GLMs)
+- two count models
+
+# Binary Model 1: LPM
+
+```{r}
+
+lpm <- lm(heterosexual ~ sex_label,
+          data = sex_marijuana)
+
+summary(lpm)
+
+```
+The p-value is under the alpha level of 0.05 so we can reject the null hypothesis of no difference between men and women. Alpha is `{r} summary(lpm)$coefficients[1]` which represents a `{r} summary(lpm)$coefficients[1] * 100`% chance of being heterosexual for women. Beta is `{r} summary(lpm)$coefficients[2]` which represents a `{r} summary(lpm)$coefficients[1]* 100`% percentage point increase in the chance of being heterosexual for men versus women. 
+
+This can be determined manually using the numbers themselves. Beta is the the likelihood of being heterosexual for women, which is 897 / (897 + 104), or `{r} 897 / (897 + 104)`. Alpha is the increase in likelihood for men compared to women, which is the likelihood for men (771 / (771 + 70)) subtracted by the likelihood for women, or `{r} (771 / (771 + 70)) - (897 / (897 + 104))`.
+
+# Binary Model 2: Log
+
+# Binary Model 3: Logit
+
+# Gaussian GLM 1
+
+# Gaussian GLM 2
+
+# Count Model 1
+
+# Count Model 2
+
+# Log Likelihood
+
+For one binary, one linear, and one count model, manually calculate the log likelihood and compare to the results of the `logLik()` function. Don't worry too much about visualizations this week. If something's useful, fine. But don't force it.
+
