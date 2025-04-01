@@ -3115,22 +3115,25 @@ vertical-align: -.125em;
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>gss2022 <span class="ot">&lt;-</span> <span class="fu">gss_get_yr</span>(<span class="at">year =</span> <span class="dv">2022</span>) <span class="sc">|&gt;</span> <span class="co"># get 2022 GSS data</span></span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  haven<span class="sc">::</span><span class="fu">zap_labels</span>()                 <span class="co"># remove labels</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
+</section>
+<section id="analysis-1-models-1-2-3" class="level1">
+<h1>Analysis #1 (Models 1, 2, 3)</h1>
 <p>The analysis will be for</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>sex_marijuana <span class="ot">&lt;-</span> gss2022 <span class="sc">|&gt;</span> </span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(sex, sexornt) <span class="sc">|&gt;</span> <span class="co"># get variables</span></span>
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>sex_god <span class="ot">&lt;-</span> gss2022 <span class="sc">|&gt;</span> </span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(sex, god) <span class="sc">|&gt;</span> <span class="co"># get variables</span></span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">drop_na</span>() <span class="sc">|&gt;</span> </span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">female =</span> <span class="fu">if_else</span>(sex <span class="sc">==</span> <span class="dv">2</span>, <span class="dv">1</span>, <span class="dv">0</span>)) <span class="sc">|&gt;</span> </span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">sex_label =</span> <span class="fu">if_else</span>(sex <span class="sc">==</span> <span class="dv">2</span>, <span class="st">&quot;Female&quot;</span>, <span class="st">&quot;Male&quot;</span>)) <span class="sc">|&gt;</span> </span>
-<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">heterosexual =</span> <span class="fu">if_else</span>(sexornt <span class="sc">==</span> <span class="dv">3</span>, <span class="dv">1</span>, <span class="dv">0</span>)) <span class="sc">|&gt;</span> <span class="co">#if &quot;yes&quot; to devil (1 or 2), yes)</span></span>
-<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">sexuality_label =</span> <span class="fu">if_else</span>(sexornt <span class="sc">==</span> <span class="dv">3</span>, <span class="st">&quot;Heterosexual&quot;</span>, <span class="st">&quot;Not Heterosexual&quot;</span>))</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">male =</span> <span class="fu">if_else</span>(sex <span class="sc">==</span> <span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">0</span>)) <span class="sc">|&gt;</span> </span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">sex_label =</span> <span class="fu">if_else</span>(sex <span class="sc">==</span> <span class="dv">1</span>, <span class="st">&quot;Male&quot;</span>, <span class="st">&quot;Female&quot;</span>)) <span class="sc">|&gt;</span> </span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">nonbelief =</span> <span class="fu">if_else</span>(god <span class="sc">&lt;=</span> <span class="dv">2</span>, <span class="dv">1</span>, <span class="dv">0</span>)) <span class="sc">|&gt;</span> <span class="co"># 2 is agnostic 1 is atheist essentially</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">belief_label =</span> <span class="fu">if_else</span>(god <span class="sc">&lt;=</span> <span class="dv">2</span>, <span class="st">&quot;Does Not Believe&quot;</span>, <span class="st">&quot;Believes in God&quot;</span>))</span>
 <span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="fu">table</span>(sex_marijuana<span class="sc">$</span>sex_label, sex_marijuana<span class="sc">$</span>sexuality_label)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="fu">table</span>(sex_god<span class="sc">$</span>sex_label, sex_god<span class="sc">$</span>belief_label)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>        
-         Heterosexual Not Heterosexual
-  Female          897              104
-  Male            771               60</code></pre>
+         Believes in God Does Not Believe
+  Female            1340              162
+  Male              1002              226</code></pre>
 </div>
 </div>
 <ul>
@@ -3138,59 +3141,346 @@ vertical-align: -.125em;
 <li>two “linear regressions” (Gaussian GLMs)</li>
 <li>two count models</li>
 </ul>
-</section>
-<section id="binary-model-1-lpm" class="level1">
-<h1>Binary Model 1: LPM</h1>
+<section id="binary-model-1-lpm" class="level2">
+<h2 class="anchored" data-anchor-id="binary-model-1-lpm">Binary Model 1: LPM</h2>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>lpm <span class="ot">&lt;-</span> <span class="fu">lm</span>(heterosexual <span class="sc">~</span> sex_label,</span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>          <span class="at">data =</span> sex_marijuana)</span>
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>lpm <span class="ot">&lt;-</span> <span class="fu">lm</span>(nonbelief <span class="sc">~</span> sex_label,</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>          <span class="at">data =</span> sex_god)</span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(lpm)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>
 Call:
-lm(formula = heterosexual ~ sex_label, data = sex_marijuana)
+lm(formula = nonbelief ~ sex_label, data = sex_god)
 
 Residuals:
     Min      1Q  Median      3Q     Max 
--0.9278  0.0722  0.0722  0.1039  0.1039 
+-0.1840 -0.1840 -0.1079 -0.1079  0.8921 
 
 Coefficients:
               Estimate Std. Error t value Pr(&gt;|t|)    
-(Intercept)   0.896104   0.009015  99.405   &lt;2e-16 ***
-sex_labelMale 0.031694   0.013385   2.368    0.018 *  
+(Intercept)    0.10786    0.00896  12.038  &lt; 2e-16 ***
+sex_labelMale  0.07618    0.01336   5.703 1.31e-08 ***
 ---
 Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
 
-Residual standard error: 0.2852 on 1830 degrees of freedom
-Multiple R-squared:  0.003055,  Adjusted R-squared:  0.00251 
-F-statistic: 5.607 on 1 and 1830 DF,  p-value: 0.01799</code></pre>
+Residual standard error: 0.3472 on 2728 degrees of freedom
+Multiple R-squared:  0.01178,   Adjusted R-squared:  0.01142 
+F-statistic: 32.52 on 1 and 2728 DF,  p-value: 1.306e-08</code></pre>
 </div>
 </div>
-<p>The p-value is under the alpha level of 0.05 so we can reject the null hypothesis of no difference between men and women. Alpha is 0.8961039 which represents a 89.6103896% chance of being heterosexual for women. Beta is 0.0316939 which represents a 89.6103896% percentage point increase in the chance of being heterosexual for men versus women.</p>
-<p>This can be determined manually using the numbers themselves. Beta is the the likelihood of being heterosexual for women, which is 897 / (897 + 104), or 0.8961039. Alpha is the increase in likelihood for men compared to women, which is the likelihood for men (771 / (771 + 70)) subtracted by the likelihood for women, or 0.0206619.</p>
+<p>The p-value is under the alpha level of 0.05 so we can reject the null hypothesis of no difference between men and women. Alpha is 0.1078562 which represents a 10.7856192% chance of not believing in God for women. Beta is 0.0761829 which represents a 10.7856192% percentage point increase in the chance of not believing in God for men.</p>
+<p>This can be determined manually using the numbers themselves. Beta is the the probability of not believing for women, which is 162 / (162 + 1340), or 0.1078562. Alpha is the increase in probability for men compared to women, which is the probability for men (226 / (226 + 1002)) subtracted by the probability for women, or 0.0761829.</p>
 </section>
-<section id="binary-model-2-log" class="level1">
-<h1>Binary Model 2: Log</h1>
+<section id="binary-model-2-log" class="level2">
+<h2 class="anchored" data-anchor-id="binary-model-2-log">Binary Model 2: Log</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>log_mod <span class="ot">&lt;-</span> <span class="fu">glm</span>(nonbelief <span class="sc">~</span> male,</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>            <span class="at">data =</span> sex_god,</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>            <span class="at">family =</span> <span class="fu">binomial</span>(<span class="at">link =</span> <span class="st">&quot;log&quot;</span>))</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(log_mod)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Call:
+glm(formula = nonbelief ~ male, family = binomial(link = &quot;log&quot;), 
+    data = sex_god)
+
+Coefficients:
+            Estimate Std. Error z value Pr(&gt;|z|)    
+(Intercept) -2.22696    0.07421 -30.009  &lt; 2e-16 ***
+male         0.53435    0.09549   5.596 2.19e-08 ***
+---
+Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+
+(Dispersion parameter for binomial family taken to be 1)
+
+    Null deviance: 2232.1  on 2729  degrees of freedom
+Residual deviance: 2200.0  on 2728  degrees of freedom
+AIC: 2204
+
+Number of Fisher Scoring iterations: 6</code></pre>
+</div>
+</div>
+<p>The p-value is under the alpha level of 0.05 so we can reject the null hypothesis of no difference between men and women. Alpha is the log risk of not believing for women, -2.2269565. Exponentiating this gives the risk of not believing for women, 1.7063377%. This can be determined manually by calculating the probability of not believing for women, 162 / (162 + 1340) or 0.1078562.</p>
+<p>Beta is 0.5343494 which is the log risk ratio. Exponentiating this means that men are 70.6337717% more likely to not believe in God than women. This can be determined manually by calculating the probability of not believing for men (226 / (1002 + 226)) divided by the probability of not believing for women (162 / (162 + 1340)); this yields 1.7063377</p>
 </section>
-<section id="binary-model-3-logit" class="level1">
-<h1>Binary Model 3: Logit</h1>
+<section id="binary-model-3-logit" class="level2">
+<h2 class="anchored" data-anchor-id="binary-model-3-logit">Binary Model 3: Logit</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>logit_mod <span class="ot">&lt;-</span> <span class="fu">glm</span>(nonbelief <span class="sc">~</span> male,</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>            <span class="at">data =</span> sex_god,</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>            <span class="at">family =</span> <span class="fu">binomial</span>(<span class="at">link =</span> <span class="st">&quot;logit&quot;</span>))</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(logit_mod)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Call:
+glm(formula = nonbelief ~ male, family = binomial(link = &quot;logit&quot;), 
+    data = sex_god)
+
+Coefficients:
+            Estimate Std. Error z value Pr(&gt;|z|)    
+(Intercept) -2.11283    0.08318 -25.401  &lt; 2e-16 ***
+male         0.62361    0.11109   5.613 1.98e-08 ***
+---
+Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+
+(Dispersion parameter for binomial family taken to be 1)
+
+    Null deviance: 2232.1  on 2729  degrees of freedom
+Residual deviance: 2200.0  on 2728  degrees of freedom
+AIC: 2204
+
+Number of Fisher Scoring iterations: 4</code></pre>
+</div>
+</div>
+<p>The p-value is under the alpha level of 0.05 so we can reject the null hypothesis of no difference between men and women. Alpha is the log odds of not believing for women, -2.1128286. Exponentiating this gives the odds of not believing for women, 0.1208955. This can be determined manually by calculating the odds of not believing for women, (162 / (162 + 1340)) / (1 - (162 / (162 + 1340))) or 0.1208955.</p>
+<p>Beta is 0.6236103 which is the log odds ratio. Exponentiating this means that the odds of not believing for men are 1.8656514 times higher than women. This can be determined manually by calculating the odds of not believing for men (226 / (1002 + 226)) / (1 - ((226 / (1002 + 226)))) divided by the odds of not believing for women (162 / (162 + 1340)) / (1 - (162 / (162 + 1340))); this yields 1.8656514</p>
+</section>
 </section>
 <section id="gaussian-glm-1" class="level1">
 <h1>Gaussian GLM 1</h1>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>gaus_1 <span class="ot">&lt;-</span> gss2022 <span class="sc">|&gt;</span> </span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(sex, hrsrelax) <span class="sc">|&gt;</span> </span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">sex_label =</span> <span class="fu">if_else</span>(sex <span class="sc">==</span> <span class="dv">1</span>, <span class="st">&quot;Male&quot;</span>, <span class="st">&quot;Female&quot;</span>)) <span class="sc">|&gt;</span> </span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">drop_na</span>()</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>gaus_1_mod <span class="ot">&lt;-</span> <span class="fu">lm</span>(hrsrelax <span class="sc">~</span> sex_label,</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>            <span class="at">data =</span> gaus_1)</span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(gaus_1_mod)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Call:
+lm(formula = hrsrelax ~ sex_label, data = gaus_1)
+
+Residuals:
+    Min      1Q  Median      3Q     Max 
+-4.2546 -2.2546 -0.9549  1.0451 20.0451 
+
+Coefficients:
+              Estimate Std. Error t value Pr(&gt;|t|)    
+(Intercept)     3.9549     0.1045  37.846   &lt;2e-16 ***
+sex_labelMale   0.2998     0.1489   2.013   0.0442 *  
+---
+Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+
+Residual standard error: 3.58 on 2311 degrees of freedom
+Multiple R-squared:  0.00175,   Adjusted R-squared:  0.001318 
+F-statistic: 4.052 on 1 and 2311 DF,  p-value: 0.04424</code></pre>
+</div>
+</div>
+<p>P-value is below alpha of 0.05, therefore we can reject null of no difference. Alpha is 3.9548552 which is the number of hrs women relax. Beta is 0.2997541 which is how many more hours men relax compared to women.</p>
 </section>
 <section id="gaussian-glm-2" class="level1">
 <h1>Gaussian GLM 2</h1>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>gaus_2 <span class="ot">&lt;-</span> gss2022 <span class="sc">|&gt;</span> </span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(sex, tvhours) <span class="sc">|&gt;</span> </span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">sex_label =</span> <span class="fu">if_else</span>(sex <span class="sc">==</span> <span class="dv">1</span>, <span class="st">&quot;Male&quot;</span>, <span class="st">&quot;Female&quot;</span>)) <span class="sc">|&gt;</span> </span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">drop_na</span>()</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>gaus_2_mod <span class="ot">&lt;-</span> <span class="fu">lm</span>(tvhours <span class="sc">~</span> sex_label,</span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>            <span class="at">data =</span> gaus_2)</span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(gaus_2_mod)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Call:
+lm(formula = tvhours ~ sex_label, data = gaus_2)
+
+Residuals:
+    Min      1Q  Median      3Q     Max 
+-3.4380 -2.3729 -1.3729  0.6271 20.6271 
+
+Coefficients:
+              Estimate Std. Error t value Pr(&gt;|t|)    
+(Intercept)    3.43802    0.08988  38.251   &lt;2e-16 ***
+sex_labelMale -0.06517    0.13087  -0.498    0.619    
+---
+Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+
+Residual standard error: 3.406 on 2716 degrees of freedom
+Multiple R-squared:  9.129e-05, Adjusted R-squared:  -0.0002769 
+F-statistic: 0.248 on 1 and 2716 DF,  p-value: 0.6186</code></pre>
+</div>
+</div>
+<p>P-value is above alpha of 0.05, therefore we cannot reject null of no difference. Alpha is 3.4380223 which is the number of hrs women watch tv. Beta is -0.0651674 which is how many fewer hours men watch tv than women.</p>
 </section>
 <section id="count-model-1" class="level1">
 <h1>Count Model 1</h1>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>count_1 <span class="ot">&lt;-</span> gss2022 <span class="sc">|&gt;</span> </span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(sex, hrsrelax) <span class="sc">|&gt;</span> </span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">sex_label =</span> <span class="fu">if_else</span>(sex <span class="sc">==</span> <span class="dv">1</span>, <span class="st">&quot;Male&quot;</span>, <span class="st">&quot;Female&quot;</span>)) <span class="sc">|&gt;</span> </span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">drop_na</span>()</span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>count_1_mod <span class="ot">&lt;-</span> <span class="fu">glm</span>(hrsrelax <span class="sc">~</span> sex_label,</span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>            <span class="at">data =</span> count_1,</span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>            <span class="at">family =</span> <span class="fu">poisson</span>(<span class="at">link=</span><span class="st">&quot;log&quot;</span>))</span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(count_1_mod)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Call:
+glm(formula = hrsrelax ~ sex_label, family = poisson(link = &quot;log&quot;), 
+    data = count_1)
+
+Coefficients:
+              Estimate Std. Error z value Pr(&gt;|z|)    
+(Intercept)    1.37494    0.01468  93.688  &lt; 2e-16 ***
+sex_labelMale  0.07306    0.02054   3.558 0.000374 ***
+---
+Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+
+(Dispersion parameter for poisson family taken to be 1)
+
+    Null deviance: 5948.0  on 2312  degrees of freedom
+Residual deviance: 5935.4  on 2311  degrees of freedom
+AIC: 12738
+
+Number of Fisher Scoring iterations: 5</code></pre>
+</div>
+</div>
+<p>The p-value is below alpha of .05 so we can reject the null hypothesis of no difference. Alpha is the log mean hours of relaxing for women, or 1.374944. Exponentiating this gives us the mean hours of relaxing for women, or 3.9548552.</p>
+<p>Beta is the log ratio of hours of relaxing, or 0.073059. Exponentiating this gives us the ratio of hours of relaxing, or 1.075794. This means that men have 7.5793953% more hours to relax than women.</p>
 </section>
 <section id="count-model-2" class="level1">
 <h1>Count Model 2</h1>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>count_2 <span class="ot">&lt;-</span> gss2022 <span class="sc">|&gt;</span> </span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(sex, height) <span class="sc">|&gt;</span> </span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">sex_label =</span> <span class="fu">if_else</span>(sex <span class="sc">==</span> <span class="dv">1</span>, <span class="st">&quot;Male&quot;</span>, <span class="st">&quot;Female&quot;</span>)) <span class="sc">|&gt;</span> </span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">drop_na</span>()</span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>count_2_mod <span class="ot">&lt;-</span> <span class="fu">glm</span>(height <span class="sc">~</span> sex_label,</span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a>            <span class="at">data =</span> count_2,</span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a>            <span class="at">family =</span> <span class="fu">poisson</span>(<span class="at">link=</span><span class="st">&quot;log&quot;</span>))</span>
+<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(count_2_mod)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Call:
+glm(formula = height ~ sex_label, family = poisson(link = &quot;log&quot;), 
+    data = count_2)
+
+Coefficients:
+              Estimate Std. Error z value Pr(&gt;|z|)    
+(Intercept)   4.165636   0.003658 1138.85   &lt;2e-16 ***
+sex_labelMale 0.083388   0.005094   16.37   &lt;2e-16 ***
+---
+Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+
+(Dispersion parameter for poisson family taken to be 1)
+
+    Null deviance: 588.14  on 2295  degrees of freedom
+Residual deviance: 320.00  on 2294  degrees of freedom
+AIC: 14206
+
+Number of Fisher Scoring iterations: 3</code></pre>
+</div>
+</div>
+<p>The p-value is below alpha of .05 so we can reject the null hypothesis of no difference. Alpha is the log height, or 4.1656356. Exponentiating this gives us the mean height for women, or 64.4336207 inches.</p>
+<p>Beta is the log ratio of height, or 0.0833877. Exponentiating this gives us the ratio of height, or 1.0869632. This means that men are 8.6963158% taller to relax than women.</p>
 </section>
-<section id="log-likelihood" class="level1">
-<h1>Log Likelihood</h1>
-<p>For one binary, one linear, and one count model, manually calculate the log likelihood and compare to the results of the <code>logLik()</code> function. Don’t worry too much about visualizations this week. If something’s useful, fine. But don’t force it.</p>
+<section id="log-likelihood-comparison" class="level1">
+<h1>Log Likelihood Comparison</h1>
+<section id="binary" class="level2">
+<h2 class="anchored" data-anchor-id="binary">Binary</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>binary_d <span class="ot">&lt;-</span> gss2022 <span class="sc">|&gt;</span> </span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(sex) <span class="sc">|&gt;</span> </span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">sex =</span> <span class="fu">if_else</span>(sex <span class="sc">==</span> <span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">0</span>)) <span class="sc">|&gt;</span>  <span class="co">#set male to 1</span></span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">drop_na</span>()</span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>binary_m <span class="ot">&lt;-</span> <span class="fu">lm</span>(sex <span class="sc">~</span> <span class="dv">1</span>,</span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a>               <span class="at">data =</span> binary_d)</span>
+<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a>binary_d <span class="ot">&lt;-</span> binary_d <span class="sc">|&gt;</span></span>
+<span id="cb18-10"><a href="#cb18-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">mean =</span> <span class="fu">mean</span>(binary_d<span class="sc">$</span>sex),</span>
+<span id="cb18-11"><a href="#cb18-11" aria-hidden="true" tabindex="-1"></a>         <span class="at">sd =</span> <span class="fu">sd</span>(binary_d<span class="sc">$</span>sex)) <span class="sc">|&gt;</span> </span>
+<span id="cb18-12"><a href="#cb18-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">l =</span> <span class="fu">dnorm</span>(sex,</span>
+<span id="cb18-13"><a href="#cb18-13" aria-hidden="true" tabindex="-1"></a>                   <span class="at">mean =</span> mean,</span>
+<span id="cb18-14"><a href="#cb18-14" aria-hidden="true" tabindex="-1"></a>                   <span class="at">sd =</span> sd),</span>
+<span id="cb18-15"><a href="#cb18-15" aria-hidden="true" tabindex="-1"></a>         <span class="at">ll =</span> <span class="fu">dnorm</span>(sex,</span>
+<span id="cb18-16"><a href="#cb18-16" aria-hidden="true" tabindex="-1"></a>                    <span class="at">mean =</span> mean,</span>
+<span id="cb18-17"><a href="#cb18-17" aria-hidden="true" tabindex="-1"></a>                    <span class="at">sd =</span> sd,</span>
+<span id="cb18-18"><a href="#cb18-18" aria-hidden="true" tabindex="-1"></a>                    <span class="at">log =</span> <span class="cn">TRUE</span>))</span>
+<span id="cb18-19"><a href="#cb18-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-20"><a href="#cb18-20" aria-hidden="true" tabindex="-1"></a><span class="fu">sum</span>(binary_d<span class="sc">$</span>ll)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] -2983.237</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="fu">logLik</span>(binary_m)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>&#39;log Lik.&#39; -2983.237 (df=2)</code></pre>
+</div>
+</div>
+</section>
+<section id="count" class="level2">
+<h2 class="anchored" data-anchor-id="count">Count</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>count_d <span class="ot">&lt;-</span> gss2022 <span class="sc">|&gt;</span> </span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(hrsrelax) <span class="sc">|&gt;</span> </span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">drop_na</span>()</span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a>count_m <span class="ot">&lt;-</span> <span class="fu">lm</span>(hrsrelax <span class="sc">~</span> <span class="dv">1</span>,</span>
+<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a>               <span class="at">data =</span> count_d)</span>
+<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a>count_d <span class="ot">&lt;-</span> count_d <span class="sc">|&gt;</span></span>
+<span id="cb22-9"><a href="#cb22-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">mean =</span> <span class="fu">mean</span>(count_d<span class="sc">$</span>hrsrelax),</span>
+<span id="cb22-10"><a href="#cb22-10" aria-hidden="true" tabindex="-1"></a>         <span class="at">sd =</span> <span class="fu">sd</span>(count_d<span class="sc">$</span>hrsrelax)) <span class="sc">|&gt;</span> </span>
+<span id="cb22-11"><a href="#cb22-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">l =</span> <span class="fu">dnorm</span>(hrsrelax,</span>
+<span id="cb22-12"><a href="#cb22-12" aria-hidden="true" tabindex="-1"></a>                   <span class="at">mean =</span> mean,</span>
+<span id="cb22-13"><a href="#cb22-13" aria-hidden="true" tabindex="-1"></a>                   <span class="at">sd =</span> sd),</span>
+<span id="cb22-14"><a href="#cb22-14" aria-hidden="true" tabindex="-1"></a>         <span class="at">ll =</span> <span class="fu">dnorm</span>(hrsrelax,</span>
+<span id="cb22-15"><a href="#cb22-15" aria-hidden="true" tabindex="-1"></a>                    <span class="at">mean =</span> mean,</span>
+<span id="cb22-16"><a href="#cb22-16" aria-hidden="true" tabindex="-1"></a>                    <span class="at">sd =</span> sd,</span>
+<span id="cb22-17"><a href="#cb22-17" aria-hidden="true" tabindex="-1"></a>                    <span class="at">log =</span> <span class="cn">TRUE</span>))</span>
+<span id="cb22-18"><a href="#cb22-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-19"><a href="#cb22-19" aria-hidden="true" tabindex="-1"></a><span class="fu">sum</span>(count_d<span class="sc">$</span>ll)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] -6243.504</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="fu">logLik</span>(count_m)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>&#39;log Lik.&#39; -6243.504 (df=2)</code></pre>
+</div>
+</div>
+</section>
+<section id="continuous" class="level2">
+<h2 class="anchored" data-anchor-id="continuous">Continuous</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>continuous_d <span class="ot">&lt;-</span> gss2022 <span class="sc">|&gt;</span> </span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(height) <span class="sc">|&gt;</span> </span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">drop_na</span>()</span>
+<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-5"><a href="#cb26-5" aria-hidden="true" tabindex="-1"></a>continuous_m <span class="ot">&lt;-</span> <span class="fu">lm</span>(height <span class="sc">~</span> <span class="dv">1</span>,</span>
+<span id="cb26-6"><a href="#cb26-6" aria-hidden="true" tabindex="-1"></a>               <span class="at">data =</span> continuous_d)</span>
+<span id="cb26-7"><a href="#cb26-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-8"><a href="#cb26-8" aria-hidden="true" tabindex="-1"></a>continuous_d <span class="ot">&lt;-</span> continuous_d <span class="sc">|&gt;</span></span>
+<span id="cb26-9"><a href="#cb26-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">mean =</span> <span class="fu">mean</span>(continuous_d<span class="sc">$</span>height),</span>
+<span id="cb26-10"><a href="#cb26-10" aria-hidden="true" tabindex="-1"></a>         <span class="at">sd =</span> <span class="fu">sd</span>(continuous_d<span class="sc">$</span>height)) <span class="sc">|&gt;</span> </span>
+<span id="cb26-11"><a href="#cb26-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">l =</span> <span class="fu">dnorm</span>(height,</span>
+<span id="cb26-12"><a href="#cb26-12" aria-hidden="true" tabindex="-1"></a>                   <span class="at">mean =</span> mean,</span>
+<span id="cb26-13"><a href="#cb26-13" aria-hidden="true" tabindex="-1"></a>                   <span class="at">sd =</span> sd),</span>
+<span id="cb26-14"><a href="#cb26-14" aria-hidden="true" tabindex="-1"></a>         <span class="at">ll =</span> <span class="fu">dnorm</span>(height,</span>
+<span id="cb26-15"><a href="#cb26-15" aria-hidden="true" tabindex="-1"></a>                    <span class="at">mean =</span> mean,</span>
+<span id="cb26-16"><a href="#cb26-16" aria-hidden="true" tabindex="-1"></a>                    <span class="at">sd =</span> sd,</span>
+<span id="cb26-17"><a href="#cb26-17" aria-hidden="true" tabindex="-1"></a>                    <span class="at">log =</span> <span class="cn">TRUE</span>))</span>
+<span id="cb26-18"><a href="#cb26-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-19"><a href="#cb26-19" aria-hidden="true" tabindex="-1"></a><span class="fu">sum</span>(continuous_d<span class="sc">$</span>ll)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] -6542.145</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb28"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="fu">logLik</span>(continuous_m)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>&#39;log Lik.&#39; -6542.145 (df=2)</code></pre>
+</div>
+</div>
+</section>
 </section>
 
 </main>

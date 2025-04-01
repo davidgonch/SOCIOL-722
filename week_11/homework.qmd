@@ -38,19 +38,21 @@ gss2022 <- gss_get_yr(year = 2022) |> # get 2022 GSS data
 
 ```
 
+# Analysis #1 (Models 1, 2, 3)
+
 The analysis will be for 
 
 ```{r}
 
-sex_marijuana <- gss2022 |> 
-  select(sex, sexornt) |> # get variables
+sex_god <- gss2022 |> 
+  select(sex, god) |> # get variables
   drop_na() |> 
-  mutate(female = if_else(sex == 2, 1, 0)) |> 
-  mutate(sex_label = if_else(sex == 2, "Female", "Male")) |> 
-  mutate(heterosexual = if_else(sexornt == 3, 1, 0)) |> #if "yes" to devil (1 or 2), yes)
-  mutate(sexuality_label = if_else(sexornt == 3, "Heterosexual", "Not Heterosexual"))
+  mutate(male = if_else(sex == 1, 1, 0)) |> 
+  mutate(sex_label = if_else(sex == 1, "Male", "Female")) |> 
+  mutate(nonbelief = if_else(god <= 2, 1, 0)) |> # 2 is agnostic 1 is atheist essentially
+  mutate(belief_label = if_else(god <= 2, "Does Not Believe", "Believes in God"))
 
-table(sex_marijuana$sex_label, sex_marijuana$sexuality_label)
+table(sex_god$sex_label, sex_god$belief_label)
 
 ```
 
@@ -58,33 +60,205 @@ table(sex_marijuana$sex_label, sex_marijuana$sexuality_label)
 - two "linear regressions" (Gaussian GLMs)
 - two count models
 
-# Binary Model 1: LPM
+## Binary Model 1: LPM
 
 ```{r}
 
-lpm <- lm(heterosexual ~ sex_label,
-          data = sex_marijuana)
+lpm <- lm(nonbelief ~ sex_label,
+          data = sex_god)
 
 summary(lpm)
 
 ```
-The p-value is under the alpha level of 0.05 so we can reject the null hypothesis of no difference between men and women. Alpha is `{r} summary(lpm)$coefficients[1]` which represents a `{r} summary(lpm)$coefficients[1] * 100`% chance of being heterosexual for women. Beta is `{r} summary(lpm)$coefficients[2]` which represents a `{r} summary(lpm)$coefficients[1]* 100`% percentage point increase in the chance of being heterosexual for men versus women. 
+The p-value is under the alpha level of 0.05 so we can reject the null hypothesis of no difference between men and women. Alpha is `{r} summary(lpm)$coefficients[1]` which represents a `{r} summary(lpm)$coefficients[1] * 100`% chance of not believing in God for women. Beta is `{r} summary(lpm)$coefficients[2]` which represents a `{r} summary(lpm)$coefficients[1]* 100`% percentage point increase in the chance of not believing in God for men. 
 
-This can be determined manually using the numbers themselves. Beta is the the likelihood of being heterosexual for women, which is 897 / (897 + 104), or `{r} 897 / (897 + 104)`. Alpha is the increase in likelihood for men compared to women, which is the likelihood for men (771 / (771 + 70)) subtracted by the likelihood for women, or `{r} (771 / (771 + 70)) - (897 / (897 + 104))`.
+This can be determined manually using the numbers themselves. Beta is the the probability of not believing for women, which is 162 / (162 + 1340), or `{r} 162 / (162 + 1340)`. Alpha is the increase in probability for men compared to women, which is the probability for men (226 / (226 + 1002)) subtracted by the probability for women, or `{r} (226 / (226 + 1002)) - (162 / (162 + 1340))`.
 
-# Binary Model 2: Log
+## Binary Model 2: Log
 
-# Binary Model 3: Logit
+```{r}
+
+log_mod <- glm(nonbelief ~ male,
+            data = sex_god,
+            family = binomial(link = "log"))
+
+summary(log_mod)
+
+```
+The p-value is under the alpha level of 0.05 so we can reject the null hypothesis of no difference between men and women. Alpha is the log risk of not believing for women, `{r} summary(log_mod)$coefficients[1]`. Exponentiating this gives the risk of not believing for women, `{r} exp(summary(log_mod)$coefficients[2])`%. This can be determined manually by calculating the probability of not believing for women, 162 / (162 + 1340) or `{r} 162 / (162 + 1340)`.
+
+Beta is `{r} summary(log_mod)$coefficients[2]` which is the log risk ratio. Exponentiating this means that men are `{r} (exp(summary(log_mod)$coefficients[2])*100)-100`% more likely to not believe in God than women. This can be determined manually by calculating the probability of not believing for men (226 / (1002 + 226)) divided by the probability of not believing for women (162 / (162 + 1340)); this yields `{r} (226 / (1002 + 226)) / (162 / (162 + 1340))`
+
+## Binary Model 3: Logit
+
+```{r}
+
+logit_mod <- glm(nonbelief ~ male,
+            data = sex_god,
+            family = binomial(link = "logit"))
+
+summary(logit_mod)
+
+```
+The p-value is under the alpha level of 0.05 so we can reject the null hypothesis of no difference between men and women. Alpha is the log odds of not believing for women, `{r} summary(logit_mod)$coefficients[1]`. Exponentiating this gives the odds of not believing for women, `{r} exp(summary(logit_mod)$coefficients[1])`. This can be determined manually by calculating the odds of not believing for women, (162 / (162 + 1340)) / (1 - (162 / (162 + 1340))) or `{r} (162 / (162 + 1340)) / (1 - (162 / (162 + 1340)))`.
+
+Beta is `{r} summary(logit_mod)$coefficients[2]` which is the log odds ratio. Exponentiating this means that the odds of not believing for men are `{r} exp(summary(logit_mod)$coefficients[2])` times higher than women. This can be determined manually by calculating the odds of not believing for men (226 / (1002 + 226)) / (1 - ((226 / (1002 + 226)))) divided by the odds of not believing for women (162 / (162 + 1340)) / (1 - (162 / (162 + 1340))); this yields `{r} (226 / (1002 + 226)) / (1 - ((226 / (1002 + 226)))) / ((162 / (162 + 1340)) / (1 - (162 / (162 + 1340))))`
+
 
 # Gaussian GLM 1
 
+```{r}
+
+gaus_1 <- gss2022 |> 
+  select(sex, hrsrelax) |> 
+  mutate(sex_label = if_else(sex == 1, "Male", "Female")) |> 
+  drop_na()
+
+gaus_1_mod <- lm(hrsrelax ~ sex_label,
+            data = gaus_1)
+
+summary(gaus_1_mod)
+
+```
+P-value is below alpha of 0.05, therefore we can reject null of no difference. Alpha is `{r} (summary(gaus_1_mod))$coefficients[1]` which is the number of hrs women relax. Beta is `{r} (summary(gaus_1_mod))$coefficients[2]` which is how many more hours men relax compared to women.
+
 # Gaussian GLM 2
+
+```{r}
+
+gaus_2 <- gss2022 |> 
+  select(sex, tvhours) |> 
+  mutate(sex_label = if_else(sex == 1, "Male", "Female")) |> 
+  drop_na()
+
+gaus_2_mod <- lm(tvhours ~ sex_label,
+            data = gaus_2)
+
+summary(gaus_2_mod)
+
+```
+P-value is above alpha of 0.05, therefore we cannot reject null of no difference. Alpha is `{r} (summary(gaus_2_mod))$coefficients[1]` which is the number of hrs women watch tv. Beta is `{r} (summary(gaus_2_mod))$coefficients[2]` which is how many fewer hours men watch tv than women.
 
 # Count Model 1
 
+```{r}
+
+count_1 <- gss2022 |> 
+  select(sex, hrsrelax) |> 
+  mutate(sex_label = if_else(sex == 1, "Male", "Female")) |> 
+  drop_na()
+
+count_1_mod <- glm(hrsrelax ~ sex_label,
+            data = count_1,
+            family = poisson(link="log"))
+
+summary(count_1_mod)
+
+```
+The p-value is below alpha of .05 so we can reject the null hypothesis of no difference. Alpha is the log mean hours of relaxing for women, or `{r} (summary(count_1_mod))$coefficients[1]`. Exponentiating this gives us the mean hours of relaxing for women, or `{r} exp((summary(count_1_mod))$coefficients[1])`.
+
+Beta is the log ratio of hours of relaxing, or `{r} (summary(count_1_mod))$coefficients[2]`. Exponentiating this gives us the ratio of hours of relaxing, or `{r} exp((summary(count_1_mod))$coefficients[2])`. This means that men have `{r} (exp((summary(count_1_mod))$coefficients[2])-1)*100`% more hours to relax than women.
+
 # Count Model 2
 
-# Log Likelihood
+```{r}
 
-For one binary, one linear, and one count model, manually calculate the log likelihood and compare to the results of the `logLik()` function. Don't worry too much about visualizations this week. If something's useful, fine. But don't force it.
+count_2 <- gss2022 |> 
+  select(sex, height) |> 
+  mutate(sex_label = if_else(sex == 1, "Male", "Female")) |> 
+  drop_na()
 
+count_2_mod <- glm(height ~ sex_label,
+            data = count_2,
+            family = poisson(link="log"))
+
+summary(count_2_mod)
+
+```
+The p-value is below alpha of .05 so we can reject the null hypothesis of no difference. Alpha is the log height, or `{r} (summary(count_2_mod))$coefficients[1]`. Exponentiating this gives us the mean height for women, or `{r} exp((summary(count_2_mod))$coefficients[1])` inches.
+
+Beta is the log ratio of height, or `{r} (summary(count_2_mod))$coefficients[2]`. Exponentiating this gives us the ratio of height, or `{r} exp((summary(count_2_mod))$coefficients[2])`. This means that men are `{r} (exp((summary(count_2_mod))$coefficients[2])-1)*100`% taller to relax than women.
+
+# Log Likelihood Comparison
+
+## Binary
+
+```{r}
+
+binary_d <- gss2022 |> 
+  select(sex) |> 
+  mutate(sex = if_else(sex == 1, 1, 0)) |>  #set male to 1
+  drop_na()
+
+binary_m <- lm(sex ~ 1,
+               data = binary_d)
+
+binary_d <- binary_d |>
+  mutate(mean = mean(binary_d$sex),
+         sd = sd(binary_d$sex)) |> 
+  mutate(l = dnorm(sex,
+                   mean = mean,
+                   sd = sd),
+         ll = dnorm(sex,
+                    mean = mean,
+                    sd = sd,
+                    log = TRUE))
+
+sum(binary_d$ll)
+logLik(binary_m)
+
+```
+
+## Count
+
+```{r}
+
+count_d <- gss2022 |> 
+  select(hrsrelax) |> 
+  drop_na()
+
+count_m <- lm(hrsrelax ~ 1,
+               data = count_d)
+
+count_d <- count_d |>
+  mutate(mean = mean(count_d$hrsrelax),
+         sd = sd(count_d$hrsrelax)) |> 
+  mutate(l = dnorm(hrsrelax,
+                   mean = mean,
+                   sd = sd),
+         ll = dnorm(hrsrelax,
+                    mean = mean,
+                    sd = sd,
+                    log = TRUE))
+
+sum(count_d$ll)
+logLik(count_m)
+
+```
+
+## Continuous
+
+```{r}
+
+continuous_d <- gss2022 |> 
+  select(height) |> 
+  drop_na()
+
+continuous_m <- lm(height ~ 1,
+               data = continuous_d)
+
+continuous_d <- continuous_d |>
+  mutate(mean = mean(continuous_d$height),
+         sd = sd(continuous_d$height)) |> 
+  mutate(l = dnorm(height,
+                   mean = mean,
+                   sd = sd),
+         ll = dnorm(height,
+                    mean = mean,
+                    sd = sd,
+                    log = TRUE))
+
+sum(continuous_d$ll)
+logLik(continuous_m)
+
+```
