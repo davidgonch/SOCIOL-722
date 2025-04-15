@@ -21,7 +21,7 @@ execute:
 
 library(tidyverse)
 library(gssr)
-
+library(sqldf)
 
 theme_set(theme_light())
 
@@ -38,233 +38,518 @@ gss2022 <- gss_get_yr(year = 2022) |> # get 2022 GSS data
 
 ```
 
-# Analysis #1 (Models 1, 2, 3)
+# Linear Regression #1
 
-The analysis will be for
+The analysis will be for hours to relax by sex and happiness.
 
 ```{r}
 
-sex_god <- gss2022 |> 
-  select(sex, god) |> # get variables
+relax <- gss2022 |> 
+  select(sex, happy, hrsrelax) |> # get variables
   drop_na() |> 
   mutate(male = if_else(sex == 1, 1, 0)) |> 
   mutate(sex_label = if_else(sex == 1, "Male", "Female")) |> 
-  mutate(nonbelief = if_else(god <= 2, 1, 0)) |> # 2 is agnostic 1 is atheist essentially
-  mutate(belief_label = if_else(god <= 2, "Does Not Believe", "Believes in God"))
+  mutate(veryhappy = if_else(happy == 1, 1, 0)) |> 
+  mutate(veryhappy_label = if_else(happy == 1, "Very Happy", "Not Very Happy"))
 
-table(sex_god$sex_label, sex_god$belief_label)
+relax_table <- relax |> 
+  group_by(sex_label, veryhappy_label) |> 
+  summarize(mean = round(mean(hrsrelax),2))
 
-```
-
--   three binary models (one LPM, one log, one logit)
--   two "linear regressions" (Gaussian GLMs)
--   two count models
-
-## Binary Model 1: LPM
-
-```{r}
-
-lpm <- lm(nonbelief ~ sex_label,
-          data = sex_god)
-
-summary(lpm)
+relax_table
 
 ```
 
-The p-value is under the alpha level of 0.05 so we can reject the null hypothesis of no difference between men and women. Alpha is `{r} summary(lpm)$coefficients[1]` which represents a `{r} summary(lpm)$coefficients[1] * 100`% chance of not believing in God for women. Beta is `{r} summary(lpm)$coefficients[2]` which represents a `{r} summary(lpm)$coefficients[1]* 100`% percentage point increase in the chance of not believing in God for men.
-
-This can be determined manually using the numbers themselves. Beta is the the probability of not believing for women, which is 162 / (162 + 1340), or `{r} 162 / (162 + 1340)`. Alpha is the increase in probability for men compared to women, which is the probability for men (226 / (226 + 1002)) subtracted by the probability for women, or `{r} (226 / (226 + 1002)) - (162 / (162 + 1340))`.
-
-## Binary Model 2: Log
+## Saturated Model by Hand
 
 ```{r}
 
-log_mod <- glm(nonbelief ~ male,
-            data = sex_god,
-            family = binomial(link = "log"))
+relax_alpha = sqldf('SELECT AVG(hrsrelax) FROM relax WHERE male == 0 AND veryhappy == 0') #tired of wrangling dplyr to do what I want so relying on my trusty SQL
 
-summary(log_mod)
+relax_b1 = sqldf('SELECT AVG(hrsrelax) FROM relax WHERE male == 0 AND veryhappy == 1') - relax_alpha
+
+relax_b2 = sqldf('SELECT AVG(hrsrelax) FROM relax WHERE male == 1 AND veryhappy == 0') -relax_alpha
+
+relax_b3 = sqldf('SELECT AVG(hrsrelax) FROM relax WHERE male == 1 AND veryhappy == 1') - relax_b1 - relax_b2 - relax_alpha
 
 ```
 
-The p-value is under the alpha level of 0.05 so we can reject the null hypothesis of no difference between men and women. Alpha is the log risk of not believing for women, `{r} summary(log_mod)$coefficients[1]`. Exponentiating this gives the risk of not believing for women, `{r} exp(summary(log_mod)$coefficients[2])`%. This can be determined manually by calculating the probability of not believing for women, 162 / (162 + 1340) or `{r} 162 / (162 + 1340)`.
+Alpha represents the mean number of hours to relax when male is 0 (i.e., respondent is female) and veryhappy is 0 (i.e., respondent is not very happy), and it is `{r} round(relax_alpha, 2)`. 
 
-Beta is `{r} summary(log_mod)$coefficients[2]` which is the log risk ratio. Exponentiating this means that men are `{r} (exp(summary(log_mod)$coefficients[2])*100)-100`% more likely to not believe in God than women. This can be determined manually by calculating the probability of not believing for men (226 / (1002 + 226)) divided by the probability of not believing for women (162 / (162 + 1340)); this yields `{r} (226 / (1002 + 226)) / (162 / (162 + 1340))`
+Beta 1 is where male is 0 and veryhappy is 1 (i.e., respondent is very happy), and it is `{r} round(relax_b1, 2)`; it represents the difference in mean number of hours to relax for a female who is very happy compared to a female who is not very happy.
 
-## Binary Model 3: Logit
+Beta 2 is where male is 1 (i.e., respondent is male) and veryhappy is 0, and it is `{r} round(relax_b2, 2)`; it represents the difference in mean number of hours to relax for a male who is not very happy compared to a female who is not very happy.
+
+Beta 3 is where male is 1 and veryhappy is 1, and it is `{r} round(relax_b3, 2)`. It represents the additional difference (in addition to beta 1 and beta 2) in mean number of hours to relax for a male who is very happy compared to a woman who is not very happy.
+
+## Saturated Model by Computer
 
 ```{r}
 
-logit_mod <- glm(nonbelief ~ male,
-            data = sex_god,
-            family = binomial(link = "logit"))
+sm_relax = lm(hrsrelax ~ male * veryhappy,
+              data = relax)
 
-summary(logit_mod)
+summary(sm_relax)
 
 ```
 
-The p-value is under the alpha level of 0.05 so we can reject the null hypothesis of no difference between men and women. Alpha is the log odds of not believing for women, `{r} summary(logit_mod)$coefficients[1]`. Exponentiating this gives the odds of not believing for women, `{r} exp(summary(logit_mod)$coefficients[1])`. This can be determined manually by calculating the odds of not believing for women, (162 / (162 + 1340)) / (1 - (162 / (162 + 1340))) or `{r} (162 / (162 + 1340)) / (1 - (162 / (162 + 1340)))`.
-
-Beta is `{r} summary(logit_mod)$coefficients[2]` which is the log odds ratio. Exponentiating this means that the odds of not believing for men are `{r} exp(summary(logit_mod)$coefficients[2])` times higher than women. This can be determined manually by calculating the odds of not believing for men (226 / (1002 + 226)) / (1 - ((226 / (1002 + 226)))) divided by the odds of not believing for women (162 / (162 + 1340)) / (1 - (162 / (162 + 1340))); this yields `{r} (226 / (1002 + 226)) / (1 - ((226 / (1002 + 226)))) / ((162 / (162 + 1340)) / (1 - (162 / (162 + 1340))))`
-
-# Gaussian GLM 1
+## Restricted Model by Computer
 
 ```{r}
 
-gaus_1 <- gss2022 |> 
-  select(sex, hrsrelax) |> 
+rm_relax = lm(hrsrelax ~ male + veryhappy,
+              data = relax)
+
+summary(rm_relax)
+
+```
+The restricted model assumes that the impacts of being male or being very happy on mean number of hours to relax are independent from one another. 
+
+Alpha represents the mean number of hours to relax for someone who is neither male nor very happy, and is `{r} round(rm_relax$coefficients[1],2)`.
+
+Beta 1 represents the difference in mean number of hours to relax for someone male compared to someone who is not, and is `{r} round(rm_relax$coefficients[2],2)`.
+
+Beta 2 represents the difference in mean number of hours to relax for someone who is very happy compared to someone who is not, and is `{r} round(rm_relax$coefficients[3],2)`.
+
+
+## Comparing Saturated and Restricted Model
+
+```{r}
+
+anova(sm_relax, rm_relax, test = "Chisq")
+
+```
+The anova does not yield a chi-square value under .05, which means we should use the restricted model as the saturated model does not predict values with significantly higher likelihoods compared to it.
+
+
+
+
+
+# Linear Regression #2
+
+The analysis will be for mean weight by sex and happiness.
+
+```{r}
+
+weight <- gss2022 |> 
+  select(sex, happy, weight) |> # get variables
+  drop_na() |> 
+  mutate(male = if_else(sex == 1, 1, 0)) |> 
   mutate(sex_label = if_else(sex == 1, "Male", "Female")) |> 
-  drop_na()
+  mutate(veryhappy = if_else(happy == 1, 1, 0)) |> 
+  mutate(veryhappy_label = if_else(happy == 1, "Very Happy", "Not Very Happy"))
 
-gaus_1_mod <- lm(hrsrelax ~ sex_label,
-            data = gaus_1)
+weight_table <- weight |> 
+  group_by(sex_label, veryhappy_label) |> 
+  summarize(mean = round(mean(weight),2))
 
-summary(gaus_1_mod)
+weight_table
 
 ```
 
-P-value is below alpha of 0.05, therefore we can reject null of no difference. Alpha is `{r} (summary(gaus_1_mod))$coefficients[1]` which is the number of hrs women relax. Beta is `{r} (summary(gaus_1_mod))$coefficients[2]` which is how many more hours men relax compared to women.
-
-# Gaussian GLM 2
+## Saturated Model by Hand
 
 ```{r}
 
-gaus_2 <- gss2022 |> 
-  select(sex, tvhours) |> 
+weight_alpha = sqldf('SELECT AVG(weight) FROM weight WHERE male == 0 AND veryhappy == 0')
+
+weight_b1 = sqldf('SELECT AVG(weight) FROM weight WHERE male == 0 AND veryhappy == 1') - weight_alpha
+
+weight_b2 = sqldf('SELECT AVG(weight) FROM weight WHERE male == 1 AND veryhappy == 0') -weight_alpha
+
+weight_b3 = sqldf('SELECT AVG(weight) FROM weight WHERE male == 1 AND veryhappy == 1') - weight_b1 - weight_b2 - weight_alpha
+
+```
+
+Alpha represents the mean weight when male is 0 (i.e., respondent is female) and veryhappy is 0 (i.e., respondent is not very happy), and it is `{r} round(weight_alpha, 2)`. 
+
+Beta 1 is where male is 0 and veryhappy is 1 (i.e., respondent is very happy), and it is `{r} round(weight_b1, 2)`; it represents the difference in mean weight for a female who is very happy compared to a female who is not very happy.
+
+Beta 2 is where male is 1 (i.e., respondent is male) and veryhappy is 0, and it is `{r} round(weight_b2, 2)`; it represents the difference in mean weight for a male who is not very happy compared to a female who is not very happy.
+
+Beta 3 is where male is 1 and veryhappy is 1, and it is `{r} round(weight_b3, 2)`. It represents the additional difference (in addition to beta 1 and beta 2) in mean weight for a male who is very happy compared to a woman who is not very happy.
+
+## Saturated Model by Computer
+
+```{r}
+
+sm_weight = lm(weight ~ male * veryhappy,
+              data = weight)
+
+summary(sm_weight)
+
+```
+
+## Restricted Model by Computer
+
+```{r}
+
+rm_weight = lm(weight ~ male + veryhappy,
+              data = weight)
+
+summary(rm_weight)
+
+```
+The restricted model assumes that the impacts of being male or being very happy on mean weight are independent from one another. 
+
+Alpha represents the mean weight for someone who is neither male nor very happy, and is `{r} round(rm_weight$coefficients[1],2)`.
+
+Beta 1 represents the difference in mean weight for someone male compared to someone who is not, and is `{r} round(rm_weight$coefficients[2],2)`.
+
+Beta 2 represents the difference in mean weight for someone who is very happy compared to someone who is not, and is `{r} round(rm_weight$coefficients[3],2)`.
+
+
+## Comparing Saturated and Restricted Model
+
+```{r}
+
+anova(sm_weight, rm_weight, test = "Chisq")
+
+```
+The anova does not yield a chi-square value under .05, which means we should use the restricted model as the saturated model does not predict values with significantly higher likelihoods compared to it.
+
+
+# Logit Regression #1
+
+The analysis will be for likelihood of voting for Biden by sex and happiness.
+
+```{r}
+
+biden <- gss2022 |> 
+  select(sex, happy, pres20) |> # get variables
+  drop_na() |> 
+  mutate(male = if_else(sex == 1, 1, 0)) |> 
   mutate(sex_label = if_else(sex == 1, "Male", "Female")) |> 
-  drop_na()
+  mutate(veryhappy = if_else(happy == 1, 1, 0)) |> 
+  mutate(veryhappy_label = if_else(happy == 1, "Very Happy", "Not Very Happy")) |> 
+  mutate(biden = if_else(pres20 == 1, 1, 0))
 
-gaus_2_mod <- lm(tvhours ~ sex_label,
-            data = gaus_2)
+biden_table <- biden |> 
+  group_by(sex_label, veryhappy_label) |> 
+  summarize(log_odds = log(mean(biden) / (1 - mean(biden))))
 
-summary(gaus_2_mod)
+biden_table
 
 ```
 
-P-value is above alpha of 0.05, therefore we cannot reject null of no difference. Alpha is `{r} (summary(gaus_2_mod))$coefficients[1]` which is the number of hrs women watch tv. Beta is `{r} (summary(gaus_2_mod))$coefficients[2]` which is how many fewer hours men watch tv than women.
-
-# Count Model 1
+## Saturated Model by Hand
 
 ```{r}
 
-count_1 <- gss2022 |> 
-  select(sex, hrsrelax) |> 
+biden_alpha = log(sqldf('SELECT AVG(biden) FROM biden WHERE male == 0 AND veryhappy == 0') / (1 - sqldf('SELECT AVG(biden) FROM biden WHERE male == 0 AND veryhappy == 0'))) # log odds
+
+biden_b1 = log(sqldf('SELECT AVG(biden) FROM biden WHERE male == 0 AND veryhappy == 1') / (1 - sqldf('SELECT AVG(biden) FROM biden WHERE male == 0 AND veryhappy == 1'))) - biden_alpha
+
+biden_b2 = log(sqldf('SELECT AVG(biden) FROM biden WHERE male == 1 AND veryhappy == 0') / (1 - sqldf('SELECT AVG(biden) FROM biden WHERE male == 1 AND veryhappy == 0'))) - biden_alpha
+
+biden_b3 = log(sqldf('SELECT AVG(biden) FROM biden WHERE male == 1 AND veryhappy == 1') / (1 - sqldf('SELECT AVG(biden) FROM biden WHERE male == 1 AND veryhappy == 1'))) - biden_b1 - biden_b2 - biden_alpha
+
+```
+
+Alpha represents the log odds of voting for Biden when male is 0 (i.e., respondent is female) and veryhappy is 0 (i.e., respondent is not very happy), and it is `{r} round(biden_alpha, 2)`. 
+
+Beta 1 is where male is 0 and veryhappy is 1 (i.e., respondent is very happy), and it is `{r} round(biden_b1, 2)`; it represents the difference in log odds of voting for Biden for a female who is very happy compared to a female who is not very happy.
+
+Beta 2 is where male is 1 (i.e., respondent is male) and veryhappy is 0, and it is `{r} round(biden_b2, 2)`; it represents the difference in log odds of voting for Biden for a male who is not very happy compared to a female who is not very happy.
+
+Beta 3 is where male is 1 and veryhappy is 1, and it is `{r} round(biden_b3, 2)`. It represents the additional difference (in addition to beta 1 and beta 2) in log odds of voting for Biden for a male who is very happy compared to a woman who is not very happy.
+
+## Saturated Model by Computer
+
+```{r}
+
+sm_biden = glm(biden ~ male * veryhappy,
+              data = biden,
+              family = binomial(link = "logit"))
+
+summary(sm_biden)
+
+```
+
+## Restricted Model by Computer
+
+```{r}
+
+rm_biden = glm(biden ~ male + veryhappy,
+              data = biden,
+              family = binomial(link = "logit"))
+
+summary(rm_biden)
+
+```
+
+The restricted model assumes that the impacts of being male or being very happy on log odds of voting for Biden are independent from one another. 
+
+Alpha represents the log odds of voting for Biden for someone who is neither male nor very happy, and is `{r} round(rm_weight$coefficients[1],2)`.
+
+Beta 1 represents the difference in log odds of voting for Biden for someone male compared to someone who is not, and is `{r} round(rm_weight$coefficients[2],2)`.
+
+Beta 2 represents the difference in log odds of voting for Biden for someone who is very happy compared to someone who is not, and is `{r} round(rm_weight$coefficients[3],2)`.
+
+
+## Comparing Saturated and Restricted Model
+
+```{r}
+
+anova(sm_biden, rm_biden, test = "Chisq")
+
+```
+The anova does not yield a chi-square value under .05, which means we should use the restricted model as the saturated model does not predict values with significantly higher likelihoods compared to it.
+
+# Logit Regression #2
+
+The analysis will be for likelihood of being depressed by sex and happiness.
+
+```{r}
+
+depress <- gss2022 |> 
+  select(sex, happy, depress) |> # get variables
+  drop_na() |> 
+  mutate(male = if_else(sex == 1, 1, 0)) |> 
   mutate(sex_label = if_else(sex == 1, "Male", "Female")) |> 
-  drop_na()
+  mutate(veryhappy = if_else(happy == 1, 1, 0)) |> 
+  mutate(veryhappy_label = if_else(happy == 1, "Very Happy", "Not Very Happy")) |> 
+  mutate(depress = if_else(depress == 1, 1, 0))
 
-count_1_mod <- glm(hrsrelax ~ sex_label,
-            data = count_1,
-            family = poisson(link="log"))
+depress_table <- depress |> 
+  group_by(sex_label, veryhappy_label) |> 
+  summarize(log_odds = log(mean(depress) / (1 - mean(depress))))
 
-summary(count_1_mod)
+depress_table
 
 ```
 
-The p-value is below alpha of .05 so we can reject the null hypothesis of no difference. Alpha is the log mean hours of relaxing for women, or `{r} (summary(count_1_mod))$coefficients[1]`. Exponentiating this gives us the mean hours of relaxing for women, or `{r} exp((summary(count_1_mod))$coefficients[1])`.
-
-Beta is the log ratio of hours of relaxing, or `{r} (summary(count_1_mod))$coefficients[2]`. Exponentiating this gives us the ratio of hours of relaxing, or `{r} exp((summary(count_1_mod))$coefficients[2])`. This means that men have `{r} (exp((summary(count_1_mod))$coefficients[2])-1)*100`% more hours to relax than women.
-
-# Count Model 2
+## Saturated Model by Hand
 
 ```{r}
 
-count_2 <- gss2022 |> 
-  select(sex, height) |> 
+depress_alpha = log(sqldf('SELECT AVG(depress) FROM depress WHERE male == 0 AND veryhappy == 0') / (1 - sqldf('SELECT AVG(depress) FROM depress WHERE male == 0 AND veryhappy == 0'))) # log odds
+
+depress_b1 = log(sqldf('SELECT AVG(depress) FROM depress WHERE male == 0 AND veryhappy == 1') / (1 - sqldf('SELECT AVG(depress) FROM depress WHERE male == 0 AND veryhappy == 1'))) - depress_alpha
+
+depress_b2 = log(sqldf('SELECT AVG(depress) FROM depress WHERE male == 1 AND veryhappy == 0') / (1 - sqldf('SELECT AVG(depress) FROM depress WHERE male == 1 AND veryhappy == 0'))) - depress_alpha
+
+depress_b3 = log(sqldf('SELECT AVG(depress) FROM depress WHERE male == 1 AND veryhappy == 1') / (1 - sqldf('SELECT AVG(depress) FROM depress WHERE male == 1 AND veryhappy == 1'))) - depress_b1 - depress_b2 - depress_alpha
+
+```
+
+Alpha represents the log odds of being depressed when male is 0 (i.e., respondent is female) and veryhappy is 0 (i.e., respondent is not very happy), and it is `{r} round(depress_alpha, 2)`. 
+
+Beta 1 is where male is 0 and veryhappy is 1 (i.e., respondent is very happy), and it is `{r} round(depress_b1, 2)`; it represents the difference in log odds of being depressed for a female who is very happy compared to a female who is not very happy.
+
+Beta 2 is where male is 1 (i.e., respondent is male) and veryhappy is 0, and it is `{r} round(depress_b2, 2)`; it represents the difference in log odds of being depressed for a male who is not very happy compared to a female who is not very happy.
+
+Beta 3 is where male is 1 and veryhappy is 1, and it is `{r} round(depress_b3, 2)`. It represents the additional difference (in addition to beta 1 and beta 2) in log odds of being depressed for a male who is very happy compared to a woman who is not very happy.
+
+## Saturated Model by Computer
+
+```{r}
+
+sm_depress = glm(depress ~ male * veryhappy,
+              data = depress,
+              family = binomial(link = "logit"))
+
+summary(sm_depress)
+
+```
+
+## Restricted Model by Computer
+
+```{r}
+
+rm_depress = glm(depress ~ male + veryhappy,
+              data = depress,
+              family = binomial(link = "logit"))
+
+summary(rm_depress)
+
+```
+
+The restricted model assumes that the impacts of being male or being very happy on log odds of being depressed are independent from one another. 
+
+Alpha represents the log odds of being depressed for someone who is neither male nor very happy, and is `{r} round(rm_weight$coefficients[1],2)`.
+
+Beta 1 represents the difference in log odds of being depressed for someone male compared to someone who is not, and is `{r} round(rm_weight$coefficients[2],2)`.
+
+Beta 2 represents the difference in log odds of being depressed for someone who is very happy compared to someone who is not, and is `{r} round(rm_weight$coefficients[3],2)`.
+
+
+## Comparing Saturated and Restricted Model
+
+```{r}
+
+anova(sm_depress, rm_depress, test = "Chisq")
+
+```
+The anova does not yield a chi-square value under .05, which means we should use the restricted model as the saturated model does not predict values with significantly higher likelihoods compared to it.
+
+
+# Poisson Regression #1
+
+The analysis will be for hours to watch tv by sex and happiness.
+
+```{r}
+
+tv <- gss2022 |> 
+  select(sex, happy, tvhours) |> # get variables
+  drop_na() |> 
+  mutate(male = if_else(sex == 1, 1, 0)) |> 
   mutate(sex_label = if_else(sex == 1, "Male", "Female")) |> 
-  drop_na()
+  mutate(veryhappy = if_else(happy == 1, 1, 0)) |> 
+  mutate(veryhappy_label = if_else(happy == 1, "Very Happy", "Not Very Happy"))
 
-count_2_mod <- glm(height ~ sex_label,
-            data = count_2,
-            family = poisson(link="log"))
+tv_table <- tv |> 
+  group_by(sex_label, veryhappy_label) |> 
+  summarize(log_mean = round(log(mean(tvhours)),2))
 
-summary(count_2_mod)
+tv_table
 
 ```
 
-The p-value is below alpha of .05 so we can reject the null hypothesis of no difference. Alpha is the log height, or `{r} (summary(count_2_mod))$coefficients[1]`. Exponentiating this gives us the mean height for women, or `{r} exp((summary(count_2_mod))$coefficients[1])` inches.
-
-Beta is the log ratio of height, or `{r} (summary(count_2_mod))$coefficients[2]`. Exponentiating this gives us the ratio of height, or `{r} exp((summary(count_2_mod))$coefficients[2])`. This means that men are `{r} (exp((summary(count_2_mod))$coefficients[2])-1)*100`% taller to relax than women.
-
-# Log Likelihood Comparison
-
-## Binary
+## Saturated Model by Hand
 
 ```{r}
 
-binary_d <- gss2022 |> 
-  select(sex) |> 
-  mutate(sex = if_else(sex == 1, 1, 0)) |>  #set male to 1
-  drop_na()
+tv_alpha = log(sqldf('SELECT AVG(tvhours) FROM tv WHERE male == 0 AND veryhappy == 0')) #tired of wrangling dplyr to do what I want so relying on my trusty SQL
 
-binary_m <- lm(sex ~ 1,
-               data = binary_d)
+tv_b1 = log(sqldf('SELECT AVG(tvhours) FROM tv WHERE male == 0 AND veryhappy == 1')) - tv_alpha
 
-binary_d <- binary_d |>
-  mutate(mean = mean(binary_d$sex),
-         sd = sd(binary_d$sex)) |> 
-  mutate(l = dnorm(sex,
-                   mean = mean,
-                   sd = sd),
-         ll = dnorm(sex,
-                    mean = mean,
-                    sd = sd,
-                    log = TRUE))
+tv_b2 = log(sqldf('SELECT AVG(tvhours) FROM tv WHERE male == 1 AND veryhappy == 0')) -tv_alpha
 
-sum(binary_d$ll)
-logLik(binary_m)
+tv_b3 = log(sqldf('SELECT AVG(tvhours) FROM tv WHERE male == 1 AND veryhappy == 1')) - tv_b1 - tv_b2 - tv_alpha
 
 ```
 
-## Count
+Alpha represents the log mean number of hours spent watching tv when male is 0 (i.e., respondent is female) and veryhappy is 0 (i.e., respondent is not very happy), and it is `{r} round(tv_alpha, 2)`. 
+
+Beta 1 is where male is 0 and veryhappy is 1 (i.e., respondent is very happy), and it is `{r} round(tv_b1, 2)`; it represents the difference in log mean number of hours spent watching tv for a female who is very happy compared to a female who is not very happy.
+
+Beta 2 is where male is 1 (i.e., respondent is male) and veryhappy is 0, and it is `{r} round(tv_b2, 2)`; it represents the difference in log mean number of hours spent watching tv for a male who is not very happy compared to a female who is not very happy.
+
+Beta 3 is where male is 1 and veryhappy is 1, and it is `{r} round(tv_b3, 2)`. It represents the additional difference (in addition to beta 1 and beta 2) in log mean number of hours spent watching tv for a male who is very happy compared to a woman who is not very happy.
+
+## Saturated Model by Computer
 
 ```{r}
 
-count_d <- gss2022 |> 
-  select(hrsrelax) |> 
-  drop_na()
+sm_tv = glm(tvhours ~ male * veryhappy,
+            data = tv,
+            family = poisson(link = "log"))
 
-count_m <- lm(hrsrelax ~ 1,
-               data = count_d)
-
-count_d <- count_d |>
-  mutate(mean = mean(count_d$hrsrelax),
-         sd = sd(count_d$hrsrelax)) |> 
-  mutate(l = dnorm(hrsrelax,
-                   mean = mean,
-                   sd = sd),
-         ll = dnorm(hrsrelax,
-                    mean = mean,
-                    sd = sd,
-                    log = TRUE))
-
-sum(count_d$ll)
-logLik(count_m)
+summary(sm_tv)
 
 ```
 
-## Continuous
+## Restricted Model by Computer
 
 ```{r}
 
-continuous_d <- gss2022 |> 
-  select(height) |> 
-  drop_na()
+rm_tv = glm(tvhours ~ male + veryhappy,
+            data = tv,
+            family = poisson(link = "log"))
 
-continuous_m <- lm(height ~ 1,
-               data = continuous_d)
-
-continuous_d <- continuous_d |>
-  mutate(mean = mean(continuous_d$height),
-         sd = sd(continuous_d$height)) |> 
-  mutate(l = dnorm(height,
-                   mean = mean,
-                   sd = sd),
-         ll = dnorm(height,
-                    mean = mean,
-                    sd = sd,
-                    log = TRUE))
-
-sum(continuous_d$ll)
-logLik(continuous_m)
+summary(rm_tv)
 
 ```
+The restricted model assumes that the impacts of being male or being very happy on log mean number of hours spent watching tv are independent from one another. 
+
+Alpha represents the log mean number of hours spent watching tv for someone who is neither male nor very happy, and is `{r} round(rm_tv$coefficients[1],2)`.
+
+Beta 1 represents the difference in log mean number of hours spent watching tv for someone male compared to someone who is not, and is `{r} round(rm_tv$coefficients[2],2)`.
+
+Beta 2 represents the difference in log mean number of hours spent watching tv for someone who is very happy compared to someone who is not, and is `{r} round(rm_tv$coefficients[3],2)`.
+
+
+## Comparing Saturated and Restricted Model
+
+```{r}
+
+anova(sm_tv, rm_tv, test = "Chisq")
+
+```
+The anova does not yield a chi-square value under .05, which means we should use the restricted model as the saturated model does not predict values with significantly higher likelihoods compared to it.
+
+# Poisson Regression #2
+
+The analysis will be for number of siblings by sex and happiness.
+
+```{r}
+
+siblings <- gss2022 |> 
+  select(sex, happy, sibs) |> # get variables
+  drop_na() |> 
+  mutate(male = if_else(sex == 1, 1, 0)) |> 
+  mutate(sex_label = if_else(sex == 1, "Male", "Female")) |> 
+  mutate(veryhappy = if_else(happy == 1, 1, 0)) |> 
+  mutate(veryhappy_label = if_else(happy == 1, "Very Happy", "Not Very Happy"))
+
+siblings_table <- siblings |> 
+  group_by(sex_label, veryhappy_label) |> 
+  summarize(log_mean = round(log(mean(sibs)),2))
+
+siblings_table
+
+```
+
+## Saturated Model by Hand
+
+```{r}
+
+siblings_alpha = log(sqldf('SELECT AVG(sibs) FROM siblings WHERE male == 0 AND veryhappy == 0')) #tired of wrangling dplyr to do what I want so relying on my trusty SQL
+
+siblings_b1 = log(sqldf('SELECT AVG(sibs) FROM siblings WHERE male == 0 AND veryhappy == 1')) - siblings_alpha
+
+siblings_b2 = log(sqldf('SELECT AVG(sibs) FROM siblings WHERE male == 1 AND veryhappy == 0')) -siblings_alpha
+
+siblings_b3 = log(sqldf('SELECT AVG(sibs) FROM siblings WHERE male == 1 AND veryhappy == 1')) - siblings_b1 - siblings_b2 - siblings_alpha
+
+```
+
+Alpha represents the log mean number of siblings when male is 0 (i.e., respondent is female) and veryhappy is 0 (i.e., respondent is not very happy), and it is `{r} round(siblings_alpha, 2)`. 
+
+Beta 1 is where male is 0 and veryhappy is 1 (i.e., respondent is very happy), and it is `{r} round(siblings_b1, 2)`; it represents the difference in log mean number of siblings for a female who is very happy compared to a female who is not very happy.
+
+Beta 2 is where male is 1 (i.e., respondent is male) and veryhappy is 0, and it is `{r} round(siblings_b2, 2)`; it represents the difference in log mean number of siblings for a male who is not very happy compared to a female who is not very happy.
+
+Beta 3 is where male is 1 and veryhappy is 1, and it is `{r} round(siblings_b3, 2)`. It represents the additional difference (in addition to beta 1 and beta 2) in log mean number of siblings for a male who is very happy compared to a woman who is not very happy.
+
+## Saturated Model by Computer
+
+```{r}
+
+sm_siblings = glm(sibs ~ male * veryhappy,
+            data = siblings,
+            family = poisson(link = "log"))
+
+summary(sm_siblings)
+
+```
+
+## Restricted Model by Computer
+
+```{r}
+
+rm_siblings = glm(sibs ~ male + veryhappy,
+            data = siblings,
+            family = poisson(link = "log"))
+
+summary(rm_siblings)
+
+```
+The restricted model assumes that the impacts of being male or being very happy on log mean number of siblings are independent from one another. 
+
+Alpha represents the log mean number of siblings for someone who is neither male nor very happy, and is `{r} round(rm_siblings$coefficients[1],2)`.
+
+Beta 1 represents the difference in log mean number of siblings for someone male compared to someone who is not, and is `{r} round(rm_siblings$coefficients[2],2)`.
+
+Beta 2 represents the difference in log mean number of siblings for someone who is very happy compared to someone who is not, and is `{r} round(rm_siblings$coefficients[3],2)`.
+
+
+## Comparing Saturated and Restricted Model
+
+```{r}
+
+anova(sm_siblings, rm_siblings, test = "Chisq")
+
+```
+The anova does  yield a chi-square value under .05, which means we should use the saturated model as the saturated model does  predict values with significantly higher likelihoods compared to the restricted model.
